@@ -3,6 +3,7 @@
 A lightweight OpenGL-based graphics and physics engine built with C++20, GLFW, and GLM. Features a modular architecture with separate physics and rendering systems.
 
 ## AI Disclosure
+**This entire README was written by Copilot, then reviewed by me.** Project is made inside CachyOS, an Arch Linux contribution. Written in VSCodium and used Copilot-CLI (https://github.com/features/copilot/cli) package to automate descriptions for this project. 
 
 **GitHub Copilot was used for efficiency in non-coding tasks only:**
 
