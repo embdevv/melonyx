@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 #include <chrono>
+#include <list>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -21,6 +22,10 @@
 #include "headers/main.h"
 #include "headers/shader.h"
 #include "headers/particle.h"
+
+#include "headers/render_particle.h"
+
+#include <cstdlib>
 
 using namespace std;
 using namespace chrono_literals;
@@ -78,11 +83,6 @@ int main()
     sphere.position = glm::vec3(0.0f, 0.0f, 0.0f);
     sphere.color    = glm::vec3(0.8f, 0.1f, 0.1f);
 
-    // Particle
-    melonyx::Particle particle;
-    particle.Velocity = glm::vec3(2.0f, 0.0f, 0.0f);  // slow enough to see
-    particle.Acceleration = glm::vec3(-1.0f, 0.0f, 0.0f);  // decelerate to stop
-    
     // OpenGL state
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.08f, 0.08f, 0.08f, 1.0f);
@@ -92,6 +92,21 @@ int main()
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(w, GLFW_TRUE);
     });
+
+    // Particle
+    melonyx::Particle particle;
+    particle.Position = glm::vec3(0.0f, 0.0f, 0.0f); // start left of center
+    particle.Velocity = glm::vec3(10.0f, 0.0f, 0.0f);  // slow enough to see
+    particle.Acceleration = glm::vec3(0.0f, 0.0f, 0.0f);  // decelerate to stop
+
+    
+    std::list<RenderParticle*> RenderParticles;
+    RenderParticle rp1 = RenderParticle(
+        &particle, 
+        &sphere, 
+        glm::vec3(0.4f, 0.1f, 0.1f)
+    );
+    RenderParticles.push_back(&rp1);
 
     using clock = chrono::high_resolution_clock;
     auto curr_time = clock::now();
@@ -115,8 +130,17 @@ int main()
             curr_ns -= timestep;
             particle.Update(timestep_sec);
             sphere.position = particle.Position;
-        }
 
+            // limit the particle to the window bounds
+            const float boundary = 5.0f - 1.0f;
+            
+            if (particle.Position.x >= boundary || particle.Position.x <= -boundary) {
+                particle.Position.x = glm::clamp(particle.Position.x, -boundary, boundary);
+                particle.Velocity.x *= -1.0f;
+            }
+
+            cout << "Physics Update: Particle position: " << particle.Position.x << ", " << particle.Position.y << ", " << particle.Position.z << endl;
+        }
         // --- Render ---
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shader);
@@ -133,24 +157,16 @@ int main()
             glm::vec3(0.0f, 0.0f, 0.0f),
             glm::vec3(0.0f, 1.0f, 0.0f)
         );
-
-        glm::mat4 transform = glm::translate(glm::mat4(1.0f), sphere.position);
-
-        glUniformMatrix4fv(glGetUniformLocation(shader, "projection"),
-            1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(shader, "view"),
-            1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(shader, "transform"),
-            1, GL_FALSE, glm::value_ptr(transform));
-        glUniform3fv(glGetUniformLocation(shader, "color"),
-            1, glm::value_ptr(sphere.color));
-
-        sphere.draw();
+        
+        for (auto it = RenderParticles.begin(); it != RenderParticles.end(); it++) {
+        (*it)->Draw(shader, projection, view);
+    }
 
         glfwSwapBuffers(window);
     }
 
     // Cleanup
+    
     cout << "Shutting down Melonyx Engine" << endl;
     sphere.cleanup();
     glDeleteProgram(shader);

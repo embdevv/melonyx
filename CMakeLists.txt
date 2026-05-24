@@ -55,6 +55,9 @@ add_executable(melonyx
     src/headers/shader.h
     src/shader.cpp
     src/particle.cpp
+    src/headers/render_particle.h
+    src/render_particle.cpp
+    src/headers/OpenGLObject.h
 )
 
 # Include headers folder
