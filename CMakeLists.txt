@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 
 if (POLICY CMP0141)
-    cmake_policy(SET CMP0141 NEW)
+    cmake_policy(SET CMP0072 NEW)
 endif()
 
 project("gdphysx")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(FetchContent)
 set(FETCHCONTENT_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty CACHE PATH "Base Directory of libs" FORCE)
@@ -51,6 +52,9 @@ find_package(OpenGL REQUIRED)
 # Executable
 add_executable(gdphysx
     src/main.cpp
+    src/headers/shader.h
+    src/shader.cpp
+    src/particle.cpp
 )
 
 # Include headers folder
@@ -82,7 +86,7 @@ endif()
 # Copy shaders
 add_custom_command(TARGET gdphysx POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/shaders"
         "$<TARGET_FILE_DIR:gdphysx>/shaders"
     COMMENT "Copying shaders"
 )
