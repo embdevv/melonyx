@@ -1,4 +1,4 @@
-# gdphysx
+# melonyx
 
 A lightweight OpenGL-based graphics and physics engine built with C++20, GLFW, and GLM. Features a modular architecture with separate physics and rendering systems.
 
@@ -47,13 +47,13 @@ A lightweight OpenGL-based graphics and physics engine built with C++20, GLFW, a
 **Linux:**
 ```bash
 cmake -B build-linux && cmake --build build-linux
-./build-linux/gdphysx
+./build-linux/melonyx
 ```
 
 **Windows (MinGW):**
 ```bash
 cmake -B build-windows -G "MinGW Makefiles" && cmake --build build-windows
-./build-windows/gdphysx.exe
+./build-windows/melonyx.exe
 ```
 
 ### Clean Rebuild
@@ -64,7 +64,7 @@ rm -rf build-linux build-windows && cmake -B build-linux && cmake --build build-
 ## Project Structure
 
 ```
-gdphysx/
+melonyx/
 ├── src/
 │   ├── main.cpp              # Application entry point
 │   ├── shader.cpp            # Shader compilation system

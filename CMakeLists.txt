@@ -4,7 +4,7 @@ if (POLICY CMP0141)
     cmake_policy(SET CMP0072 NEW)
 endif()
 
-project("gdphysx")
+project("melonyx")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -50,7 +50,7 @@ FetchContent_MakeAvailable(glm)
 find_package(OpenGL REQUIRED)
 
 # Executable
-add_executable(gdphysx
+add_executable(melonyx
     src/main.cpp
     src/headers/shader.h
     src/shader.cpp
@@ -58,12 +58,12 @@ add_executable(gdphysx
 )
 
 # Include headers folder
-target_include_directories(gdphysx PRIVATE
+target_include_directories(melonyx PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/headers
 )
 
 # Link libraries
-target_link_libraries(gdphysx
+target_link_libraries(melonyx
     glfw
     OpenGL::GL
     glad_gl_core_46
@@ -72,25 +72,25 @@ target_link_libraries(gdphysx
 
 # Linux
 if(UNIX AND NOT APPLE)
-    target_link_libraries(gdphysx dl pthread)
+    target_link_libraries(melonyx dl pthread)
 endif()
 
 # Windows MinGW static
 if(WIN32)
-    target_link_libraries(gdphysx opengl32)
-    set_target_properties(gdphysx PROPERTIES
+    target_link_libraries(melonyx opengl32)
+    set_target_properties(melonyx PROPERTIES
         LINK_FLAGS "-static -static-libgcc -static-libstdc++"
     )
 endif()
 
 # Copy shaders
-add_custom_command(TARGET gdphysx POST_BUILD
+add_custom_command(TARGET melonyx POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/src/shaders"
-        "$<TARGET_FILE_DIR:gdphysx>/shaders"
+        "$<TARGET_FILE_DIR:melonyx>/shaders"
     COMMENT "Copying shaders"
 )
 
 if(CMAKE_VERSION VERSION_GREATER 3.12)
-    set_property(TARGET gdphysx PROPERTY CXX_STANDARD 20)
+    set_property(TARGET melonyx PROPERTY CXX_STANDARD 20)
 endif()
