@@ -34,7 +34,7 @@ const string WINDOW_TITLE = "Erica Mauriz Barundia";
 // ===== MAIN =====
 int main()
 {
-    constexpr chrono::nanoseconds timestep(16ms); // ~60 FPS
+    constexpr chrono::nanoseconds timestep(48ms); // ~60 FPS
     
     if (!glfwInit()) {
         cerr << "GLFW init failed" << endl;
@@ -62,9 +62,16 @@ int main()
     }
 
     cout << "OpenGL: " << glGetString(GL_VERSION) << endl;
+    cout << "Melonyx Engine initialized" << endl;
 
     // Compile shaders
     GLuint shader = compileShaders("shaders/sample.vert", "shaders/sample.frag");
+    if (shader == 0) {
+        cerr << "Shader compilation failed" << endl;
+        glfwTerminate();
+        return -1;
+    }
+    cout << "Shaders compiled successfully" << endl;
 
     // Build sphere
     Sphere sphere;
@@ -132,9 +139,21 @@ int main()
         curr_time = clock::now();
         auto dur = chrono::duration_cast<chrono::nanoseconds>(curr_time - prev_time);
         prev_time = curr_time;
+        
+        // Debug: Print physics and frame update info
+        static int frameCount = 0;
+        frameCount++;
+        if (frameCount % 60 == 0) {  // Print every 60 frames (~1 second at 60 FPS)
+            double ms = dur.count() / 1e6;
+            cout << "Frame: " << frameCount 
+                 << " | Delta time: " << ms << "ms"
+                 << " | FPS: " << (1e9 / dur.count())
+                 << endl;
+        }
     }
 
     // Cleanup
+    cout << "Shutting down Melonyx Engine" << endl;
     sphere.cleanup();
     glDeleteProgram(shader);
     glfwTerminate();

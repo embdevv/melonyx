@@ -28,8 +28,8 @@ set_property(GLOBAL PROPERTY _CMAKE_FindGit_GIT_EXECUTABLE_VERSION
 include(ExternalProject)
 ExternalProject_Add(glm-populate
                      "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/g-truc/glm.git" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "1.0.1"
-                    SOURCE_DIR          "/home/embdev/Documents/GitHub/gdphysx/thirdparty/glm-src"
-                    BINARY_DIR          "/home/embdev/Documents/GitHub/gdphysx/thirdparty/glm-build"
+                    SOURCE_DIR          "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-src"
+                    BINARY_DIR          "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-build"
                     CONFIGURE_COMMAND   ""
                     BUILD_COMMAND       ""
                     INSTALL_COMMAND     ""

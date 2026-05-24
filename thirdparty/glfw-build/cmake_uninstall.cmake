@@ -1,9 +1,9 @@
 
-if (NOT EXISTS "/home/embdev/Documents/GitHub/gdphysx/thirdparty/glfw-build/install_manifest.txt")
-    message(FATAL_ERROR "Cannot find install manifest: \"/home/embdev/Documents/GitHub/gdphysx/thirdparty/glfw-build/install_manifest.txt\"")
+if (NOT EXISTS "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-build/install_manifest.txt")
+    message(FATAL_ERROR "Cannot find install manifest: \"/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-build/install_manifest.txt\"")
 endif()
 
-file(READ "/home/embdev/Documents/GitHub/gdphysx/thirdparty/glfw-build/install_manifest.txt" files)
+file(READ "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-build/install_manifest.txt" files)
 string(REGEX REPLACE "\n" ";" files "${files}")
 
 foreach (file ${files})
