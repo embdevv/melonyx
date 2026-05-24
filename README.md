@@ -2,15 +2,23 @@
 
 A lightweight OpenGL-based graphics and physics engine built with C++20, GLFW, and GLM. Features a modular architecture with separate physics and rendering systems.
 
-## About Copilot Usage
+## AI Disclosure
 
-**GitHub Copilot was used ONLY for convenience purposes:**
+**GitHub Copilot was used for efficiency in non-coding tasks only:**
+
+### ✅ What Copilot Was Used For:
 - Documentation generation (`.github/copilot-instructions.md`)
-- Workflow automation setup (`.github/workflows/copilot-setup-steps.yml`)
-- Commit message composition
-- README and setup file creation
+- GitHub Actions workflow automation (`.github/workflows/copilot-setup-steps.yml`)
+- Commit message composition and formatting
+- README and supporting documentation files
 
-**Copilot was NOT used for any coding content.** All core implementation (`src/`, physics engine, shader system, rendering pipeline) is original code.
+### ❌ What Copilot Was NOT Used For:
+- **Core implementation** - All physics engine code is original
+- **Rendering system** - All shader compilation and OpenGL code is original
+- **Main application loop** - All business logic is original
+- **Project architecture** - All design decisions and system design are original
+
+**Transparency Statement:** Copilot was leveraged as a productivity tool for documentation, automation, and communication artifacts. The actual software engineering work—designing the physics system, implementing the rendering pipeline, architecting the particle system, and all algorithmic decisions—was done without AI assistance. This approach allowed focus on core development while automating routine documentation and setup tasks.
 
 ## Features
 
