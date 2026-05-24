@@ -124,6 +124,3 @@ Currently no unit tests. Validation is done through visual rendering.
 
 ## Author
 Erica Mauriz Barundia
-
-## License
-[Add license here]
