@@ -12,6 +12,9 @@ public:
     std::vector<unsigned int> indices;
     int indexCount;
 
+    glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 color = glm::vec3(0.2f, 0.6f, 1.0f);
+
     void build(float radius = 1.0f, int sectors = 36, int stacks = 18)
     {
         vertices.clear();

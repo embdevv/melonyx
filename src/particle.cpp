@@ -17,6 +17,7 @@ namespace melonyx {
     void Particle::Update(float time)
     {
         this->Position += this->Velocity * time;
+        this->Velocity += this->Acceleration * time;
     }
 
     Particle::Particle()
