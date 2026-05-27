@@ -94,6 +94,22 @@ add_custom_command(TARGET melonyx POST_BUILD
     COMMENT "Copying shaders"
 )
 
+# Race Simulation Executable (Programming Challenge 1)
+add_executable(race_simulation
+    src/race_main.cpp
+    src/race_particle.cpp
+    src/headers/race_particle.h
+)
+
+target_include_directories(race_simulation PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(race_simulation
+    glm::glm
+)
+
 if(CMAKE_VERSION VERSION_GREATER 3.12)
     set_property(TARGET melonyx PROPERTY CXX_STANDARD 20)
+    set_property(TARGET race_simulation PROPERTY CXX_STANDARD 20)
 endif()
