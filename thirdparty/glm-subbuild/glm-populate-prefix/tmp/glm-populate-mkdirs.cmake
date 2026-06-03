@@ -6,22 +6,22 @@ cmake_minimum_required(VERSION ${CMAKE_VERSION}) # this file comes with cmake
 # If CMAKE_DISABLE_SOURCE_CHANGES is set to true and the source directory is an
 # existing directory in our source tree, calling file(MAKE_DIRECTORY) on it
 # would cause a fatal error, even though it would be a no-op.
-if(NOT EXISTS "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-src")
-  file(MAKE_DIRECTORY "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-src")
+if(NOT EXISTS "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-src")
+  file(MAKE_DIRECTORY "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-src")
 endif()
 file(MAKE_DIRECTORY
-  "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-build"
-  "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix"
-  "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/tmp"
-  "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp"
-  "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/src"
-  "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp"
+  "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-build"
+  "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix"
+  "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/tmp"
+  "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp"
+  "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/src"
+  "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp"
 )
 
 set(configSubDirs )
 foreach(subDir IN LISTS configSubDirs)
-    file(MAKE_DIRECTORY "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/${subDir}")
+    file(MAKE_DIRECTORY "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/${subDir}")
 endforeach()
 if(cfgdir)
-  file(MAKE_DIRECTORY "/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp${cfgdir}") # cfgdir has leading slash
+  file(MAKE_DIRECTORY "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp${cfgdir}") # cfgdir has leading slash
 endif()

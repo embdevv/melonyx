@@ -49,6 +49,8 @@ FetchContent_MakeAvailable(glm)
 # OpenGL
 find_package(OpenGL REQUIRED)
 
+add_compile_definitions(_USE_MATH_DEFINES)
+
 # Executable
 add_executable(melonyx
     src/main.cpp
