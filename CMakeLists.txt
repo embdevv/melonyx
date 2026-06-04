@@ -54,11 +54,14 @@ add_compile_definitions(_USE_MATH_DEFINES)
 # Executable
 add_executable(melonyx
     src/main.cpp
-    src/headers/shader.h
     src/shader.cpp
     src/particle.cpp
-    src/headers/render_particle.h
     src/render_particle.cpp
+    src/world_particle.cpp
+    src/tiny_obj_loader.cpp
+    src/headers/shader.h
+    src/headers/render_particle.h
+    src/headers/world_particle.h
     src/headers/OpenGLObject.h
 )
 
@@ -94,6 +97,14 @@ add_custom_command(TARGET melonyx POST_BUILD
         "${CMAKE_CURRENT_SOURCE_DIR}/src/shaders"
         "$<TARGET_FILE_DIR:melonyx>/shaders"
     COMMENT "Copying shaders"
+)
+
+# Copy 3D assets/objects
+add_custom_command(TARGET melonyx POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/3D"
+        "$<TARGET_FILE_DIR:melonyx>/3D"
+    COMMENT "Copying 3D assets"
 )
 
 if(CMAKE_VERSION VERSION_GREATER 3.12)

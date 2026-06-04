@@ -5,9 +5,11 @@
 
 void RenderParticle::Draw(GLuint shader, const glm::mat4& projection, const glm::mat4& view)
 {
-    if (!RenderObject || !PhysicsParticle) return;
+    if (PhysicsParticle->IsDestroyed()) return;
 
+    // Translate to particle position and scale up to be visible in world space
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), PhysicsParticle->Position);
+    transform = glm::scale(transform, glm::vec3(20.0f));
 
     glUniformMatrix4fv(glGetUniformLocation(shader, "projection"),
         1, GL_FALSE, glm::value_ptr(projection));
@@ -19,4 +21,5 @@ void RenderParticle::Draw(GLuint shader, const glm::mat4& projection, const glm:
         1, glm::value_ptr(Color));
 
     RenderObject->draw();
+
 }

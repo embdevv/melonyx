@@ -22,8 +22,8 @@
 #include "headers/main.h"
 #include "headers/shader.h"
 #include "headers/particle.h"
-
 #include "headers/render_particle.h"
+#include "headers/world_particle.h"
 
 #include <cstdlib>
 
@@ -31,13 +31,19 @@ using namespace std;
 using namespace chrono_literals;
 
 // ===== WINDOW =====
-const int    WINDOW_SIZE  = 800;
+const int    WINDOW_SIZE = 800;
 const string WINDOW_TITLE = "Erica Mauriz Barundia";
+
+bool AtCenter(const melonyx::Particle& p)
+{
+    return p.Position.x >= 0.0f;
+}
 
 // ===== MAIN =====
 int main()
 {
     constexpr chrono::nanoseconds timestep(16ms);
+    constexpr float timestep_sec = timestep.count() / (float)(1E09);
 
     if (!glfwInit()) {
         cerr << "GLFW init failed" << endl;
@@ -77,11 +83,15 @@ int main()
     cout << "Shaders compiled successfully" << endl;
 
     // Build sphere
-    Sphere sphere;
-    sphere.build(1.0f, 72, 36);
+    ObjMesh sphere;
+    if (!sphere.load("3D/sphere.obj"))
+    {
+        cerr << "Failed to load sphere.obj" << endl;
+        glfwTerminate();
+        return -1;
+    }
     sphere.upload();
-    sphere.position = glm::vec3(0.0f, 0.0f, 0.0f);
-    sphere.color    = glm::vec3(0.8f, 0.1f, 0.1f);
+    sphere.color = glm::vec3(0.8f, 0.1f, 0.1f);
 
     // OpenGL state
     glEnable(GL_DEPTH_TEST);
@@ -91,22 +101,43 @@ int main()
     glfwSetKeyCallback(window, [](GLFWwindow* w, int key, int, int action, int) {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(w, GLFW_TRUE);
-    });
+        });
 
-    // Particle
-    melonyx::Particle particle;
-    particle.Position = glm::vec3(0.0f, 0.0f, 0.0f); // start left of center
-    particle.Velocity = glm::vec3(10.0f, 0.0f, 0.0f);  // slow enough to see
-    particle.Acceleration = glm::vec3(0.0f, 0.0f, 0.0f);  // decelerate to stop
+    // ===== PHYSICS WORLD SETUP =====
+    
+    melonyx::PhysicsWorld pWorld = melonyx::PhysicsWorld();
 
+    glm::vec3 velocity = glm::vec3(100.0f, 0.0f, 0.0f);
+    glm::vec3 accel = glm::vec3(0.0f, 0.0f, 0.0f);
+
+    // Create particle and add to world
+    melonyx::Particle p1;
+    p1.Position = glm::vec3(-400, 200, 0);
+    p1.Velocity = velocity;
+    p1.Acceleration = accel;
+    pWorld.AddParticle(&p1);
+
+    melonyx::Particle p2;
+    p2.Position = glm::vec3(-400, 0, 0);
+    p2.Velocity = velocity;
+    p2.Acceleration = accel;
+    pWorld.AddParticle(&p2);
+
+    melonyx::Particle p3;
+    p3.Position = glm::vec3(-400, -200, 0);
+    p3.Velocity = velocity;
+    p3.Acceleration = accel;
+    pWorld.AddParticle(&p3);
+
+    // Create render particle linked to p1 and sphere
+    RenderParticle rp1(&p1, &sphere, glm::vec3(1.0f, 0.0f, 0.0f)); // red
+	RenderParticle rp2(&p2, &sphere, glm::vec3(1.0f, 1.0f, 0.0f)); // yellow
+    RenderParticle rp3(&p3, &sphere, glm::vec3(0.0f, 1.0f, 0.0f)); // green
     
     std::list<RenderParticle*> RenderParticles;
-    RenderParticle rp1 = RenderParticle(
-        &particle, 
-        &sphere, 
-        glm::vec3(0.4f, 0.1f, 0.1f)
-    );
     RenderParticles.push_back(&rp1);
+    RenderParticles.push_back(&rp2);
+    RenderParticles.push_back(&rp3);
 
     using clock = chrono::high_resolution_clock;
     auto curr_time = clock::now();
@@ -126,47 +157,54 @@ int main()
 
         // --- Physics update ---
         while (curr_ns >= timestep) {
-            constexpr float timestep_sec = timestep.count() / (float)(1E09);
             curr_ns -= timestep;
-            particle.Update(timestep_sec);
-            sphere.position = particle.Position;
 
-            // limit the particle to the window bounds
-            const float boundary = 5.0f - 1.0f;
-            
-            if (particle.Position.x >= boundary || particle.Position.x <= -boundary) {
-                particle.Position.x = glm::clamp(particle.Position.x, -boundary, boundary);
-                particle.Velocity.x *= -1.0f;
+            // Update all particles via physics world
+            //pWorld.Update(timestep_sec);
+
+            if (AtCenter(p1)) p1.Destroy();
+            if (AtCenter(p2)) p2.Destroy();
+            if (AtCenter(p3)) p3.Destroy();
+
+            cout << "Melonyx Update" << endl;
+            pWorld.Update(timestep_sec);
+
+            // Bounce off window bounds
+            const float boundary = 400.0f;
+            if (p1.Position.x >= boundary || p1.Position.x <= -boundary) {
+                p1.Position.x = glm::clamp(p1.Position.x, -boundary, boundary);
+                p1.Velocity.x *= -1.0f;
             }
 
-            cout << "Physics Update: Particle position: " << particle.Position.x << ", " << particle.Position.y << ", " << particle.Position.z << endl;
+            cout << "Position: " << p1.Position.x << ", "
+                << p1.Position.y << ", " << p1.Position.z << endl;
         }
+
         // --- Render ---
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shader);
 
-        float orthoSize = 5.0f;
+        float orthoSize = 450.0f;
         glm::mat4 projection = glm::ortho(
             -orthoSize, orthoSize,
             -orthoSize, orthoSize,
-            0.1f, 100.0f
+            0.1f, 1000.0f
         );
 
         glm::mat4 view = glm::lookAt(
-            glm::vec3(0.0f, 0.0f, 5.0f),
+            glm::vec3(0.0f, 0.0f, 500.0f),
             glm::vec3(0.0f, 0.0f, 0.0f),
             glm::vec3(0.0f, 1.0f, 0.0f)
         );
-        
+
         for (auto it = RenderParticles.begin(); it != RenderParticles.end(); it++) {
-        (*it)->Draw(shader, projection, view);
-    }
+            (*it)->Draw(shader, projection, view);
+        }
 
         glfwSwapBuffers(window);
     }
 
     // Cleanup
-    
     cout << "Shutting down Melonyx Engine" << endl;
     sphere.cleanup();
     glDeleteProgram(shader);

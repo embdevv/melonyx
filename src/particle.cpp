@@ -14,6 +14,7 @@ namespace melonyx {
 
     void Particle::Update(float time)
     {
+        if (isDestroyed) return;
         this->Position += this->Velocity * time;
         this->Velocity += this->Acceleration * time;
     }
@@ -25,4 +26,8 @@ namespace melonyx {
         this->Acceleration = glm::vec3(0, 0, 0);
     }
 
+    void Particle::Destroy()
+    {
+        this->isDestroyed = true;
+    }
 }

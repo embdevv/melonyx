@@ -1,8 +1,10 @@
 // headers/OpenGLObject.h
 #pragma once
+#include <iostream>
 #include <glad/gl.h>
 #include <glm/glm.hpp>
 #include <vector>
+#include "tiny_obj_loader.h"
 
 class OpenGLObject {
 public:
@@ -59,4 +61,44 @@ public:
     }
 
     virtual ~OpenGLObject() = default;
+};
+
+
+class ObjMesh : public OpenGLObject {
+public:
+    bool load(const std::string& path) {
+        tinyobj::attrib_t attrib;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+        std::string warn, err;
+
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str())) {
+            std::cerr << "Failed to load OBJ: " << err << "\n";
+            return false;
+        }
+
+        vertices.clear();
+        indices.clear();
+
+        // Flatten all faces into interleaved position + normal
+        for (auto& shape : shapes) {
+            for (auto& idx : shape.mesh.indices) {
+                // position
+                vertices.push_back(attrib.vertices[3 * idx.vertex_index + 0]);
+                vertices.push_back(attrib.vertices[3 * idx.vertex_index + 1]);
+                vertices.push_back(attrib.vertices[3 * idx.vertex_index + 2]);
+                // normal
+                if (idx.normal_index >= 0) {
+                    vertices.push_back(attrib.normals[3 * idx.normal_index + 0]);
+                    vertices.push_back(attrib.normals[3 * idx.normal_index + 1]);
+                    vertices.push_back(attrib.normals[3 * idx.normal_index + 2]);
+                }
+                else {
+                    vertices.push_back(0); vertices.push_back(1); vertices.push_back(0);
+                }
+                indices.push_back((unsigned)indices.size());
+            }
+        }
+        return true;
+    }
 };
