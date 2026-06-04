@@ -6,7 +6,7 @@
 void RenderParticle::Draw(GLuint shader, const glm::mat4& projection, const glm::mat4& view)
 {
     if (PhysicsParticle->IsDestroyed()) return;
-
+        
     // Translate to particle position and scale up to be visible in world space
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), PhysicsParticle->Position);
     transform = glm::scale(transform, glm::vec3(20.0f));

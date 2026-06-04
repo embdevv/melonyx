@@ -113,6 +113,8 @@ int main()
     // Create particle and add to world
     melonyx::Particle p1;
     p1.Position = glm::vec3(-400, 200, 0);
+    p1.mass = 1;
+    p1.damping = 0.5f;
     p1.Velocity = velocity;
     p1.Acceleration = accel;
     pWorld.AddParticle(&p1);
@@ -120,6 +122,7 @@ int main()
     melonyx::Particle p2;
     p2.Position = glm::vec3(-400, 0, 0);
     p2.Velocity = velocity;
+    p2.damping = 0.98f;
     p2.Acceleration = accel;
     pWorld.AddParticle(&p2);
 
@@ -162,22 +165,34 @@ int main()
             // Update all particles via physics world
             //pWorld.Update(timestep_sec);
 
-            if (AtCenter(p1)) p1.Destroy();
-            if (AtCenter(p2)) p2.Destroy();
-            if (AtCenter(p3)) p3.Destroy();
+            //if (AtCenter(p1)) p1.Destroy();
+            //if (AtCenter(p2)) p2.Destroy();
+            //if (AtCenter(p3)) p3.Destroy();
+
+            p1.AddForce(glm::vec3(6000, 0, 0));
 
             cout << "Melonyx Update" << endl;
             pWorld.Update(timestep_sec);
 
             // Bounce off window bounds
-            const float boundary = 400.0f;
+            const float boundary = 425.0f;
             if (p1.Position.x >= boundary || p1.Position.x <= -boundary) {
                 p1.Position.x = glm::clamp(p1.Position.x, -boundary, boundary);
                 p1.Velocity.x *= -1.0f;
             }
 
-            cout << "Position: " << p1.Position.x << ", "
-                << p1.Position.y << ", " << p1.Position.z << endl;
+            if (p2.Position.x >= boundary || p2.Position.x <= -boundary) {
+                p2.Position.x = glm::clamp(p2.Position.x, -boundary, boundary);
+                p2.Velocity.x *= -1.0f;
+            }
+
+            if (p3.Position.x >= boundary || p3.Position.x <= -boundary) {
+                p3.Position.x = glm::clamp(p3.Position.x, -boundary, boundary);
+                p3.Velocity.x *= -1.0f;
+            }
+
+            //cout << "Position: " << p1.Position.x << ", "
+            //    << p1.Position.y << ", " << p1.Position.z << endl;
         }
 
         // --- Render ---
