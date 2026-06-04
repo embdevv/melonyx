@@ -25,6 +25,11 @@
 #include "headers/render_particle.h"
 #include "headers/world_particle.h"
 
+#include "headers/force_gen.h"
+#include "headers/force_registry.h"
+#include "headers/gravity_force_gen.h"
+#include "headers/drag_force_gen.h"
+
 #include <cstdlib>
 
 using namespace std;
@@ -110,19 +115,25 @@ int main()
     glm::vec3 velocity = glm::vec3(100.0f, 0.0f, 0.0f);
     glm::vec3 accel = glm::vec3(0.0f, 0.0f, 0.0f);
 
+    
     // Create particle and add to world
     melonyx::Particle p1;
     p1.Position = glm::vec3(-400, 200, 0);
     p1.mass = 1;
-    p1.damping = 0.5f;
+    p1.damping = 0.9f;
     p1.Velocity = velocity;
     p1.Acceleration = accel;
     pWorld.AddParticle(&p1);
+   
+
+    DragForceGenerator drag = DragForceGenerator(0.14, 0.1);
+    pWorld.forceRegistry.Add(&p1, &drag);
 
     melonyx::Particle p2;
     p2.Position = glm::vec3(-400, 0, 0);
     p2.Velocity = velocity;
-    p2.damping = 0.98f;
+    p2.mass = 1;
+    p2.damping = 0.9f;
     p2.Acceleration = accel;
     pWorld.AddParticle(&p2);
 
@@ -169,9 +180,9 @@ int main()
             //if (AtCenter(p2)) p2.Destroy();
             //if (AtCenter(p3)) p3.Destroy();
 
-            p1.AddForce(glm::vec3(6000, 0, 0));
+            //p1.AddForce(glm::vec3(6000, 0, 0));
 
-            cout << "Melonyx Update" << endl;
+            //cout << "Melonyx Update" << endl;
             pWorld.Update(timestep_sec);
 
             // Bounce off window bounds
@@ -181,14 +192,29 @@ int main()
                 p1.Velocity.x *= -1.0f;
             }
 
+            if (p1.Position.y >= boundary || p1.Position.y <= -boundary) {
+                p1.Position.y = glm::clamp(p1.Position.y, -boundary, boundary);
+                p1.Velocity.y *= -1.0f;
+            }
+
             if (p2.Position.x >= boundary || p2.Position.x <= -boundary) {
                 p2.Position.x = glm::clamp(p2.Position.x, -boundary, boundary);
                 p2.Velocity.x *= -1.0f;
             }
 
+            if (p2.Position.y >= boundary || p2.Position.y <= -boundary) {
+                p2.Position.y = glm::clamp(p2.Position.y, -boundary, boundary);
+                p2.Velocity.y *= -1.0f;
+            }
+
             if (p3.Position.x >= boundary || p3.Position.x <= -boundary) {
                 p3.Position.x = glm::clamp(p3.Position.x, -boundary, boundary);
                 p3.Velocity.x *= -1.0f;
+            }
+
+            if (p3.Position.y >= boundary || p3.Position.y <= -boundary) {
+                p3.Position.y = glm::clamp(p3.Position.y, -boundary, boundary);
+                p3.Velocity.y *= -1.0f;
             }
 
             //cout << "Position: " << p1.Position.x << ", "

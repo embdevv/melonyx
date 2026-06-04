@@ -63,7 +63,7 @@ add_executable(melonyx
     src/headers/render_particle.h
     src/headers/world_particle.h
     src/headers/OpenGLObject.h
-)
+ "src/gravity_force_gen.cpp" "src/headers/force_gen.h" "src/headers/drag_force_gen.h" "src/drag_force_gen.cpp" "src/headers/force_registry.h" "src/force_registry.cpp")
 
 # Include headers folder
 target_include_directories(melonyx PRIVATE
