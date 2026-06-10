@@ -30,6 +30,8 @@
 #include "headers/gravity_force_gen.h"
 #include "headers/drag_force_gen.h"
 
+#include "headers/anchoredspring.h"
+
 #include <cstdlib>
 
 using namespace std;
@@ -38,11 +40,6 @@ using namespace chrono_literals;
 // ===== WINDOW =====
 const int    WINDOW_SIZE = 800;
 const string WINDOW_TITLE = "Erica Mauriz Barundia";
-
-bool AtCenter(const melonyx::Particle& p)
-{
-    return p.Position.x >= 0.0f;
-}
 
 // ===== MAIN =====
 int main()
@@ -109,49 +106,50 @@ int main()
         });
 
     // ===== PHYSICS WORLD SETUP =====
-    
     melonyx::PhysicsWorld pWorld = melonyx::PhysicsWorld();
 
-    glm::vec3 velocity = glm::vec3(100.0f, 0.0f, 0.0f);
-    glm::vec3 accel = glm::vec3(0.0f, 0.0f, 0.0f);
-
-    
-    // Create particle and add to world
+    // Create particle
     melonyx::Particle p1;
-    p1.Position = glm::vec3(-400, 200, 0);
-    p1.mass = 1;
+    p1.Position = glm::vec3(0.0f, 50.0f, 0.0f);
+    p1.mass = 50.0f;
     p1.damping = 0.9f;
-    p1.Velocity = velocity;
-    p1.Acceleration = accel;
+    p1.Velocity = glm::vec3(0.0f);
+    p1.Acceleration = glm::vec3(0.0f);
     pWorld.AddParticle(&p1);
-   
 
-    DragForceGenerator drag = DragForceGenerator(0.14, 0.1);
+    // Add force: (0.6, 0.3, 0) as per assignment
+    p1.AddForce(glm::vec3(0.6f, 0.3f, 0.0f));
+
+    // Gravity: (0, -9.8, 0)
+    GravityForceGenerator gravity(glm::vec3(0.0f, -9.8f, 0.0f));
+    pWorld.forceRegistry.Add(&p1, &gravity);
+
+    // Drag
+    DragForceGenerator drag(0.14f, 0.1f);
     pWorld.forceRegistry.Add(&p1, &drag);
 
-    melonyx::Particle p2;
-    p2.Position = glm::vec3(-400, 0, 0);
-    p2.Velocity = velocity;
-    p2.mass = 1;
-    p2.damping = 0.9f;
-    p2.Acceleration = accel;
-    pWorld.AddParticle(&p2);
-
-    melonyx::Particle p3;
-    p3.Position = glm::vec3(-400, -200, 0);
-    p3.Velocity = velocity;
-    p3.Acceleration = accel;
-    pWorld.AddParticle(&p3);
+    // Anchored spring: anchor above, spring constant = 5, rest length = 0.5
+    glm::vec3 springAnchor = glm::vec3(0.0f, 200.0f, 0.0f);
+    melonyx::AnchoredSpring aSpring(springAnchor, 5.0f, 0.5f);
+    pWorld.forceRegistry.Add(&p1, &aSpring);
 
     // Create render particle linked to p1 and sphere
     RenderParticle rp1(&p1, &sphere, glm::vec3(1.0f, 0.0f, 0.0f)); // red
-	RenderParticle rp2(&p2, &sphere, glm::vec3(1.0f, 1.0f, 0.0f)); // yellow
-    RenderParticle rp3(&p3, &sphere, glm::vec3(0.0f, 1.0f, 0.0f)); // green
-    
+
     std::list<RenderParticle*> RenderParticles;
     RenderParticles.push_back(&rp1);
-    RenderParticles.push_back(&rp2);
-    RenderParticles.push_back(&rp3);
+
+    // ===== SPRING LINE VAO (persistent, updated each frame) =====
+    GLuint lineVAO, lineVBO;
+    glGenVertexArrays(1, &lineVAO);
+    glGenBuffers(1, &lineVBO);
+    glBindVertexArray(lineVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    // Allocate space for 2 vertices * 3 floats, dynamic since it updates every frame
+    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
 
     using clock = chrono::high_resolution_clock;
     auto curr_time = clock::now();
@@ -173,16 +171,6 @@ int main()
         while (curr_ns >= timestep) {
             curr_ns -= timestep;
 
-            // Update all particles via physics world
-            //pWorld.Update(timestep_sec);
-
-            //if (AtCenter(p1)) p1.Destroy();
-            //if (AtCenter(p2)) p2.Destroy();
-            //if (AtCenter(p3)) p3.Destroy();
-
-            //p1.AddForce(glm::vec3(6000, 0, 0));
-
-            //cout << "Melonyx Update" << endl;
             pWorld.Update(timestep_sec);
 
             // Bounce off window bounds
@@ -191,55 +179,51 @@ int main()
                 p1.Position.x = glm::clamp(p1.Position.x, -boundary, boundary);
                 p1.Velocity.x *= -1.0f;
             }
-
             if (p1.Position.y >= boundary || p1.Position.y <= -boundary) {
                 p1.Position.y = glm::clamp(p1.Position.y, -boundary, boundary);
                 p1.Velocity.y *= -1.0f;
             }
-
-            if (p2.Position.x >= boundary || p2.Position.x <= -boundary) {
-                p2.Position.x = glm::clamp(p2.Position.x, -boundary, boundary);
-                p2.Velocity.x *= -1.0f;
-            }
-
-            if (p2.Position.y >= boundary || p2.Position.y <= -boundary) {
-                p2.Position.y = glm::clamp(p2.Position.y, -boundary, boundary);
-                p2.Velocity.y *= -1.0f;
-            }
-
-            if (p3.Position.x >= boundary || p3.Position.x <= -boundary) {
-                p3.Position.x = glm::clamp(p3.Position.x, -boundary, boundary);
-                p3.Velocity.x *= -1.0f;
-            }
-
-            if (p3.Position.y >= boundary || p3.Position.y <= -boundary) {
-                p3.Position.y = glm::clamp(p3.Position.y, -boundary, boundary);
-                p3.Velocity.y *= -1.0f;
-            }
-
-            //cout << "Position: " << p1.Position.x << ", "
-            //    << p1.Position.y << ", " << p1.Position.z << endl;
         }
 
         // --- Render ---
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shader);
 
-        float orthoSize = 450.0f;
+        float     orthoSize = 450.0f;
         glm::mat4 projection = glm::ortho(
             -orthoSize, orthoSize,
             -orthoSize, orthoSize,
             0.1f, 1000.0f
         );
-
         glm::mat4 view = glm::lookAt(
             glm::vec3(0.0f, 0.0f, 500.0f),
             glm::vec3(0.0f, 0.0f, 0.0f),
             glm::vec3(0.0f, 1.0f, 0.0f)
         );
 
-        for (auto it = RenderParticles.begin(); it != RenderParticles.end(); it++) {
+        // Draw particles
+        for (auto it = RenderParticles.begin(); it != RenderParticles.end(); ++it)
             (*it)->Draw(shader, projection, view);
+
+        // --- Draw spring line ---
+        {
+            float lineVerts[] = {
+                springAnchor.x, springAnchor.y, springAnchor.z,
+                p1.Position.x,  p1.Position.y,  p1.Position.z
+            };
+
+            glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(lineVerts), lineVerts);
+
+            glm::mat4 model = glm::mat4(1.0f);
+            glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+            glUniform3f(glGetUniformLocation(shader, "color"), 1.0f, 1.0f, 1.0f); // white
+
+            glBindVertexArray(lineVAO);
+            glDrawArrays(GL_LINES, 0, 2);
+            glBindVertexArray(0);
         }
 
         glfwSwapBuffers(window);
@@ -247,6 +231,8 @@ int main()
 
     // Cleanup
     cout << "Shutting down Melonyx Engine" << endl;
+    glDeleteVertexArrays(1, &lineVAO);
+    glDeleteBuffers(1, &lineVBO);
     sphere.cleanup();
     glDeleteProgram(shader);
     glfwTerminate();

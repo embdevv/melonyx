@@ -19,17 +19,17 @@ project(glm-populate NONE)
 # Pass through things we've already detected in the main project to avoid
 # paying the cost of redetecting them again in ExternalProject_Add()
 set(GIT_EXECUTABLE [==[C:/Program Files/Git/cmd/git.exe]==])
-set(Git_VERSION [==[2.53.0.windows.1]==])
+set(Git_VERSION [==[2.54.0.windows.1]==])
 set_property(GLOBAL PROPERTY _CMAKE_FindGit_GIT_EXECUTABLE_VERSION
-  [==[C:/Program Files/Git/cmd/git.exe;2.53.0.windows.1]==]
+  [==[C:/Program Files/Git/cmd/git.exe;2.54.0.windows.1]==]
 )
 
 
 include(ExternalProject)
 ExternalProject_Add(glm-populate
                      "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/g-truc/glm.git" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "1.0.1"
-                    SOURCE_DIR          "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-src"
-                    BINARY_DIR          "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glm-build"
+                    SOURCE_DIR          "C:/Users/erica/source/repos/embdevv/melonyx/thirdparty/glm-src"
+                    BINARY_DIR          "C:/Users/erica/source/repos/embdevv/melonyx/thirdparty/glm-build"
                     CONFIGURE_COMMAND   ""
                     BUILD_COMMAND       ""
                     INSTALL_COMMAND     ""

@@ -63,7 +63,7 @@ add_executable(melonyx
     src/headers/render_particle.h
     src/headers/world_particle.h
     src/headers/OpenGLObject.h
- "src/gravity_force_gen.cpp" "src/headers/force_gen.h" "src/headers/drag_force_gen.h" "src/drag_force_gen.cpp" "src/headers/force_registry.h" "src/force_registry.cpp")
+ "src/force/gravity_force_gen.cpp" "src/headers/force_gen.h" "src/headers/drag_force_gen.h" "src/force/drag_force_gen.cpp" "src/headers/force_registry.h" "src/force/force_registry.cpp" "src/headers/anchoredspring.h" "src/spring/anchoredspring.cpp")
 
 # Include headers folder
 target_include_directories(melonyx PRIVATE
@@ -73,8 +73,8 @@ target_include_directories(melonyx PRIVATE
 # Link libraries
 target_link_libraries(melonyx
     glfw
-    OpenGL::GL
     glad_gl_core_46
+    OpenGL::GL
     glm::glm
 )
 

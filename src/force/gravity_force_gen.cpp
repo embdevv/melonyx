@@ -1,4 +1,4 @@
-#include "headers/gravity_force_gen.h"
+#include "../headers/gravity_force_gen.h"
 
 void GravityForceGenerator::UpdateForce(melonyx::Particle* particle, float dt)
 {

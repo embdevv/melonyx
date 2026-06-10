@@ -19,17 +19,17 @@ project(glad-populate NONE)
 # Pass through things we've already detected in the main project to avoid
 # paying the cost of redetecting them again in ExternalProject_Add()
 set(GIT_EXECUTABLE [==[C:/Program Files/Git/cmd/git.exe]==])
-set(Git_VERSION [==[2.53.0.windows.1]==])
+set(Git_VERSION [==[2.54.0.windows.1]==])
 set_property(GLOBAL PROPERTY _CMAKE_FindGit_GIT_EXECUTABLE_VERSION
-  [==[C:/Program Files/Git/cmd/git.exe;2.53.0.windows.1]==]
+  [==[C:/Program Files/Git/cmd/git.exe;2.54.0.windows.1]==]
 )
 
 
 include(ExternalProject)
 ExternalProject_Add(glad-populate
                      "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/Dav1dde/glad.git" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "v2.0.6" "SOURCE_SUBDIR" "cmake"
-                    SOURCE_DIR          "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glad-src"
-                    BINARY_DIR          "C:/Users/erica/Documents/GitHub/melonyx/thirdparty/glad-build"
+                    SOURCE_DIR          "C:/Users/erica/source/repos/embdevv/melonyx/thirdparty/glad-src"
+                    BINARY_DIR          "C:/Users/erica/source/repos/embdevv/melonyx/thirdparty/glad-build"
                     CONFIGURE_COMMAND   ""
                     BUILD_COMMAND       ""
                     INSTALL_COMMAND     ""

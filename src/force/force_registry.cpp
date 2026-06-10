@@ -1,4 +1,4 @@
-#include "headers/force_registry.h"
+#include "../headers/force_registry.h"
 
 void ForceRegistry::Add(melonyx::Particle* particle, ForceGenerator* forceGen)
 {
