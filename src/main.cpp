@@ -118,7 +118,20 @@ int main()
     pWorld.AddParticle(&p1);
 
     // Add force: (0.6, 0.3, 0) as per assignment
-    p1.AddForce(glm::vec3(0.6f, 0.3f, 0.0f));
+    p1.AddForce(glm::vec3(0.6f, 0.3f, 0.0f) * 1000000.0f);
+    
+    melonyx::Particle p2;
+	p2.Position = glm::vec3(0.0f, 100.0f, 0.0f);
+	p2.mass = 50.0f;
+	p2.damping = 0.9f;
+	p2.Velocity = glm::vec3(0.0f);
+	p2.Acceleration = glm::vec3(0.0f);
+	pWorld.AddParticle(&p2);
+
+
+    // Create render particle linked to p1 and sphere
+    RenderParticle rp1(&p1, &sphere, glm::vec3(1.0f, 0.0f, 0.0f)); // red
+	RenderParticle rp2(&p2, &sphere, glm::vec3(0.0f, 1.0f, 0.0f)); // green
 
     // Gravity: (0, -9.8, 0)
     GravityForceGenerator gravity(glm::vec3(0.0f, -9.8f, 0.0f));
@@ -130,14 +143,14 @@ int main()
 
     // Anchored spring: anchor above, spring constant = 5, rest length = 0.5
     glm::vec3 springAnchor = glm::vec3(0.0f, 200.0f, 0.0f);
-    melonyx::AnchoredSpring aSpring(springAnchor, 5.0f, 0.5f);
+    melonyx::AnchoredSpring aSpring(springAnchor, 50.0f, 0.5f);
     pWorld.forceRegistry.Add(&p1, &aSpring);
-
-    // Create render particle linked to p1 and sphere
-    RenderParticle rp1(&p1, &sphere, glm::vec3(1.0f, 0.0f, 0.0f)); // red
+	pWorld.forceRegistry.Add(&p2, &aSpring);
 
     std::list<RenderParticle*> RenderParticles;
     RenderParticles.push_back(&rp1);
+	RenderParticles.push_back(&rp2);
+
 
     // ===== SPRING LINE VAO (persistent, updated each frame) =====
     GLuint lineVAO, lineVBO;
@@ -189,7 +202,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shader);
 
-        float     orthoSize = 450.0f;
+        float     orthoSize = 350.0f;
         glm::mat4 projection = glm::ortho(
             -orthoSize, orthoSize,
             -orthoSize, orthoSize,
