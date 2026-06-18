@@ -36,7 +36,7 @@ set(number_of_tries 0)
 while(error_code AND number_of_tries LESS 3)
   execute_process(
     COMMAND "C:/Program Files/Git/cmd/git.exe"
-            clone --no-checkout --config "advice.detachedHead=false" "https://github.com/glfw/glfw" "glfw-src"
+            clone --no-checkout --depth 1 --no-single-branch --config "advice.detachedHead=false" "https://github.com/glfw/glfw.git" "glfw-src"
     WORKING_DIRECTORY "C:/Users/erica/source/repos/embdevv/melonyx/thirdparty"
     RESULT_VARIABLE error_code
     ${maybe_show_command}
@@ -47,7 +47,7 @@ if(number_of_tries GREATER 1)
   message(NOTICE "Had to git clone more than once: ${number_of_tries} times.")
 endif()
 if(error_code)
-  message(FATAL_ERROR "Failed to clone repository: 'https://github.com/glfw/glfw'")
+  message(FATAL_ERROR "Failed to clone repository: 'https://github.com/glfw/glfw.git'")
 endif()
 
 execute_process(

@@ -6,7 +6,7 @@ method=git
 command=C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;C:/Users/erica/source/repos/embdevv/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/tmp/glfw-populate-gitclone.cmake
 source_dir=C:/Users/erica/source/repos/embdevv/melonyx/thirdparty/glfw-src
 work_dir=C:/Users/erica/source/repos/embdevv/melonyx/thirdparty
-repository=https://github.com/glfw/glfw
+repository=https://github.com/glfw/glfw.git
 remote=origin
 init_submodules=TRUE
 recurse_submodules=--recursive
