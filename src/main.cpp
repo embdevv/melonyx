@@ -70,7 +70,7 @@ int main()
 
     // Fixed anchor at the top (not added to world so gravity skips it)
     melonyx::Particle anchor;
-    anchor.Position = glm::vec3(0.0f, 250.0f, 0.0f);
+    anchor.Position = glm::vec3(0.0f, -250.0f, 0.0f);
     anchor.mass = 1e12f;
     anchor.Velocity = glm::vec3(0.0f);
     anchor.Acceleration = glm::vec3(0.0f);
@@ -180,7 +180,7 @@ int main()
             glBufferSubData(GL_ARRAY_BUFFER, 0, lineVerts.size() * sizeof(float), lineVerts.data());
 
             glm::mat4 model = glm::mat4(1.0f);
-            glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(glGetUniformLocation(shader, "transform"), 1, GL_FALSE, glm::value_ptr(model));
             glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, glm::value_ptr(view));
             glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
             glUniform3f(glGetUniformLocation(shader, "color"), 0.9f, 0.9f, 0.9f);
