@@ -10,7 +10,6 @@ public:
 	glm::vec3 contactNormal;
 	void Resolve(float time);
 	float GetSeparatingSpeed();
-	float depth;
 
 protected:
 	void ResolveInterpenetration(float time);
