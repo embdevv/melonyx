@@ -6,6 +6,7 @@
 #include "particlelink.h"
 #include "particlecontact.h"
 #include "contactresolver.h"
+#include "cable.h"
 
 namespace melonyx {
 
@@ -16,6 +17,9 @@ namespace melonyx {
 
 		// Contains the list of links (rods, cables, etc.)
 		std::list<ParticleLink*> Links;
+
+		// Anchored cables (particle-to-fixed-point constraints)
+		std::list<Cable*> Cables;
 
 		void AddParticle(melonyx::Particle* toAdd);
 		void Update(float time);

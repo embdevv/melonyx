@@ -67,8 +67,9 @@ add_executable(melonyx
     src/spring/particlespring.cpp
     src/particlecontact.cpp
     src/particlelink.cpp
+    src/cable.cpp
     src/rod.cpp
- "src/force/gravity_force_gen.cpp" "src/headers/force_gen.h" "src/headers/drag_force_gen.h" "src/force/drag_force_gen.cpp" "src/headers/force_registry.h" "src/force/force_registry.cpp" "src/headers/anchoredspring.h" "src/spring/anchoredspring.cpp" "src/spring/particlespring.cpp" "src/headers/particlecontact.h" "src/headers/contactresolver.h")
+ "src/force/gravity_force_gen.cpp" "src/headers/force_gen.h" "src/headers/drag_force_gen.h" "src/force/drag_force_gen.cpp" "src/headers/force_registry.h" "src/force/force_registry.cpp" "src/headers/anchoredspring.h" "src/spring/anchoredspring.cpp" "src/spring/particlespring.cpp" "src/headers/particlecontact.h" "src/headers/contactresolver.h" "src/headers/cable.h" "src/cable.cpp")
 # Include headers folder
 target_include_directories(melonyx PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/headers

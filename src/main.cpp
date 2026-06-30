@@ -32,6 +32,7 @@
 
 #include "headers/anchoredspring.h"
 #include "headers/rod.h"
+#include "headers/cable.h"
 
 #include <cstdlib>
 
@@ -138,13 +139,16 @@ int main()
     RenderParticle rp2(&p2, &sphere, glm::vec3(0.0f, 1.0f, 0.0f)); // green
 
     // Rods
-    melonyx::Rod* r = new melonyx::Rod();
-    r->particles[0] = &p1;
-    r->particles[1] = &p2;
-    r->length = 50; // matches initial 50-unit gap between p1 and p2
+    //melonyx::Rod* r = new melonyx::Rod();
+    //r->particles[0] = &p1;
+    //r->particles[1] = &p2;
+    //r->length = 50; // matches initial 50-unit gap between p1 and p2
 
     //pWorld.Links.push_back(r);
 
+    melonyx::Cable* cable = new melonyx::Cable(glm::vec3(0.0f, 200.0f, 0.0f), 150.0f, 0.9f);
+    cable->particle = &p1;
+    pWorld.Cables.push_back(cable);
 
     // Gravity: (0, -9.8, 0)
     GravityForceGenerator gravity(glm::vec3(0.0f, -9.8f, 0.0f));

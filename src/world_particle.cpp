@@ -77,6 +77,18 @@ namespace melonyx {
 				Contacts.push_back(contact);
 			}
 		}
+
+		for (std::list<Cable*>::iterator i = Cables.begin();
+			i != Cables.end();
+			i++)
+		{
+			ParticleContact* contact = (*i)->GetContact();
+
+			if (contact != nullptr)
+			{
+				Contacts.push_back(contact);
+			}
+		}
 	}
 
 	void PhysicsWorld::Update(float time)
