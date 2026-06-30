@@ -28,8 +28,8 @@ set_property(GLOBAL PROPERTY _CMAKE_FindGit_GIT_EXECUTABLE_VERSION
 include(ExternalProject)
 ExternalProject_Add(glad-populate
                      "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/Dav1dde/glad.git" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "v2.0.6" "SOURCE_SUBDIR" "cmake"
-                    SOURCE_DIR          "C:/Users/erica/source/repos/embdevv/melonyx/thirdparty/glad-src"
-                    BINARY_DIR          "C:/Users/erica/source/repos/embdevv/melonyx/thirdparty/glad-build"
+                    SOURCE_DIR          "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glad-src"
+                    BINARY_DIR          "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glad-build"
                     CONFIGURE_COMMAND   ""
                     BUILD_COMMAND       ""
                     INSTALL_COMMAND     ""

@@ -20,6 +20,8 @@ namespace melonyx {
 
         float damping = 0.999f;
         float mass = 1.0f;
+        float radius = 1.f;      // particle size
+        float restitution = 1.f; // bouncy-ness
 
         void Update(float dt);
         void Destroy();

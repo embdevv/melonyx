@@ -28,8 +28,8 @@ set_property(GLOBAL PROPERTY _CMAKE_FindGit_GIT_EXECUTABLE_VERSION
 include(ExternalProject)
 ExternalProject_Add(glfw-populate
                      "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/glfw/glfw" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "3.4"
-                    SOURCE_DIR          "C:/Users/erica/source/repos/embdevv/melonyx/thirdparty/glfw-src"
-                    BINARY_DIR          "C:/Users/erica/source/repos/embdevv/melonyx/thirdparty/glfw-build"
+                    SOURCE_DIR          "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-src"
+                    BINARY_DIR          "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-build"
                     CONFIGURE_COMMAND   ""
                     BUILD_COMMAND       ""
                     INSTALL_COMMAND     ""

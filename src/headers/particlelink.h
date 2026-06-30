@@ -1,5 +1,6 @@
 #pragma once
 #include "particle.h"
+#include "particlecontact.h"
 
 class ParticleLink
 {
@@ -10,4 +11,3 @@ public:
 protected:
 	float CurrentLength();
 };
-

@@ -1,7 +1,7 @@
-prefix=C:/Users/erica/source/repos/embdevv/melonyx/out/install/x64-Debug
+prefix=C:/Users/embdev/Documents/GitHub/melonyx/out/install/x64-Debug
 exec_prefix=${prefix}
-includedir=C:/Users/erica/source/repos/embdevv/melonyx/out/install/x64-Debug/include
-libdir=C:/Users/erica/source/repos/embdevv/melonyx/out/install/x64-Debug/lib
+includedir=C:/Users/embdev/Documents/GitHub/melonyx/out/install/x64-Debug/include
+libdir=C:/Users/embdev/Documents/GitHub/melonyx/out/install/x64-Debug/lib
 
 Name: GLFW
 Description: A multi-platform library for OpenGL, window and input

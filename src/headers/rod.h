@@ -2,11 +2,15 @@
 #include "particlelink.h"
 #include "particlecontact.h"
 
-class Rod : public ParticleLink
+namespace melonyx
 {
-public:
-	float length = 1;
-	float restitution = 0;
 
-	ParticleContact* GetContact() override;
-};
+	class Rod : public ParticleLink
+	{
+	public:
+		float length = 1;
+		float restitution = 0;
+
+		ParticleContact* GetContact() override;
+	};
+}

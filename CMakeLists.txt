@@ -59,13 +59,16 @@ add_executable(melonyx
     src/render_particle.cpp
     src/world_particle.cpp
     src/tiny_obj_loader.cpp
+    src/contactresolver.cpp
     src/headers/shader.h
     src/headers/render_particle.h
     src/headers/world_particle.h
     src/headers/OpenGLObject.h
     src/spring/particlespring.cpp
- "src/force/gravity_force_gen.cpp" "src/headers/force_gen.h" "src/headers/drag_force_gen.h" "src/force/drag_force_gen.cpp" "src/headers/force_registry.h" "src/force/force_registry.cpp" "src/headers/anchoredspring.h" "src/spring/anchoredspring.cpp" "src/spring/particlespring.cpp" "src/headers/particlecontact.h")
-
+    src/particlecontact.cpp
+    src/particlelink.cpp
+    src/rod.cpp
+ "src/force/gravity_force_gen.cpp" "src/headers/force_gen.h" "src/headers/drag_force_gen.h" "src/force/drag_force_gen.cpp" "src/headers/force_registry.h" "src/force/force_registry.cpp" "src/headers/anchoredspring.h" "src/spring/anchoredspring.cpp" "src/spring/particlespring.cpp" "src/headers/particlecontact.h" "src/headers/contactresolver.h")
 # Include headers folder
 target_include_directories(melonyx PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/headers

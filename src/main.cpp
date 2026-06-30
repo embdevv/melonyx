@@ -31,6 +31,7 @@
 #include "headers/drag_force_gen.h"
 
 #include "headers/anchoredspring.h"
+#include "headers/rod.h"
 
 #include <cstdlib>
 
@@ -119,19 +120,29 @@ int main()
 
     // Add force: (0.6, 0.3, 0) as per assignment
     p1.AddForce(glm::vec3(0.6f, 0.3f, 0.0f) * 1000000.0f);
-    
+
     melonyx::Particle p2;
-	p2.Position = glm::vec3(0.0f, 100.0f, 0.0f);
-	p2.mass = 50.0f;
-	p2.damping = 0.9f;
-	p2.Velocity = glm::vec3(0.0f);
-	p2.Acceleration = glm::vec3(0.0f);
-	pWorld.AddParticle(&p2);
+    p2.Position = glm::vec3(0.0f, 100.0f, 0.0f);
+    p2.mass = 50.0f;
+    p2.damping = 0.9f;
+    p2.Velocity = glm::vec3(0.0f);
+    p2.Acceleration = glm::vec3(0.0f);
+    pWorld.AddParticle(&p2);
 
 
     // Create render particle linked to p1 and sphere
     RenderParticle rp1(&p1, &sphere, glm::vec3(1.0f, 0.0f, 0.0f)); // red
-	RenderParticle rp2(&p2, &sphere, glm::vec3(0.0f, 1.0f, 0.0f)); // green
+    
+    RenderParticle rp2(&p2, &sphere, glm::vec3(0.0f, 1.0f, 0.0f)); // green
+
+    // Rods
+    melonyx::Rod* r = new melonyx::Rod();
+    r->particles[0] = &p1;
+    r->particles[1] = &p2;
+    r->length = 50; // matches initial 50-unit gap between p1 and p2
+
+    pWorld.Links.push_back(r);
+
 
     // Gravity: (0, -9.8, 0)
     GravityForceGenerator gravity(glm::vec3(0.0f, -9.8f, 0.0f));
@@ -145,11 +156,11 @@ int main()
     glm::vec3 springAnchor = glm::vec3(0.0f, 200.0f, 0.0f);
     melonyx::AnchoredSpring aSpring(springAnchor, 50.0f, 0.5f);
     pWorld.forceRegistry.Add(&p1, &aSpring);
-	pWorld.forceRegistry.Add(&p2, &aSpring);
+    pWorld.forceRegistry.Add(&p2, &aSpring);
 
     std::list<RenderParticle*> RenderParticles;
     RenderParticles.push_back(&rp1);
-	RenderParticles.push_back(&rp2);
+    RenderParticles.push_back(&rp2);
 
 
     // ===== SPRING LINE VAO (persistent, updated each frame) =====
@@ -159,6 +170,17 @@ int main()
     glBindVertexArray(lineVAO);
     glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
     // Allocate space for 2 vertices * 3 floats, dynamic since it updates every frame
+    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+
+    // ===== ROD LINE VAO (persistent, updated each frame) =====
+    GLuint rodLineVAO, rodLineVBO;
+    glGenVertexArrays(1, &rodLineVAO);
+    glGenBuffers(1, &rodLineVBO);
+    glBindVertexArray(rodLineVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, rodLineVBO);
     glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -239,6 +261,27 @@ int main()
             glBindVertexArray(0);
         }
 
+        // --- Draw rod line ---
+        {
+            float rodVerts[] = {
+                p1.Position.x, p1.Position.y, p1.Position.z,
+                p2.Position.x, p2.Position.y, p2.Position.z
+            };
+
+            glBindBuffer(GL_ARRAY_BUFFER, rodLineVBO);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(rodVerts), rodVerts);
+
+            glm::mat4 model = glm::mat4(1.0f);
+            glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+            glUniform3f(glGetUniformLocation(shader, "color"), 1.0f, 1.0f, 0.0f); // yellow
+
+            glBindVertexArray(rodLineVAO);
+            glDrawArrays(GL_LINES, 0, 2);
+            glBindVertexArray(0);
+        }
+
         glfwSwapBuffers(window);
     }
 
@@ -246,6 +289,8 @@ int main()
     cout << "Shutting down Melonyx Engine" << endl;
     glDeleteVertexArrays(1, &lineVAO);
     glDeleteBuffers(1, &lineVBO);
+    glDeleteVertexArrays(1, &rodLineVAO);
+    glDeleteBuffers(1, &rodLineVBO);
     sphere.cleanup();
     glDeleteProgram(shader);
     glfwTerminate();
