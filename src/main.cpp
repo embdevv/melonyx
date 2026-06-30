@@ -114,6 +114,7 @@ int main()
     p1.Position = glm::vec3(0.0f, 50.0f, 0.0f);
     p1.mass = 50.0f;
     p1.damping = 0.9f;
+    p1.radius = 20.0f;
     p1.Velocity = glm::vec3(0.0f);
     p1.Acceleration = glm::vec3(0.0f);
     pWorld.AddParticle(&p1);
@@ -122,9 +123,10 @@ int main()
     p1.AddForce(glm::vec3(0.6f, 0.3f, 0.0f) * 1000000.0f);
 
     melonyx::Particle p2;
-    p2.Position = glm::vec3(0.0f, 100.0f, 0.0f);
+    p2.Position = glm::vec3(0.0f, 65.0f, 0.0f);
     p2.mass = 50.0f;
     p2.damping = 0.9f;
+    p2.radius = 20.0f;
     p2.Velocity = glm::vec3(0.0f);
     p2.Acceleration = glm::vec3(0.0f);
     pWorld.AddParticle(&p2);
@@ -141,7 +143,7 @@ int main()
     r->particles[1] = &p2;
     r->length = 50; // matches initial 50-unit gap between p1 and p2
 
-    pWorld.Links.push_back(r);
+    //pWorld.Links.push_back(r);
 
 
     // Gravity: (0, -9.8, 0)

@@ -19,10 +19,13 @@ namespace melonyx {
 
 		void AddParticle(melonyx::Particle* toAdd);
 		void Update(float time);
+		void AddContact(melonyx::Particle* p1, melonyx::Particle* p2, float restitution,
+			glm::vec3 contactNormal, float depth);
 
 	protected:
 		// Generates the contacts that need to be resolved
 		void GenerateContacts();
+		void GetOverlaps();
 
 	private:
 		std::list<ParticleContact*> Contacts;
