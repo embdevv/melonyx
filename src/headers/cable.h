@@ -12,7 +12,9 @@ namespace melonyx
         }
 
         melonyx::Particle* particle = nullptr;
-        ParticleContact* GetContact();
+        
+        // Check current distance from the particle to the anchor
+        ParticleContact* GetContact(); 
 
     private:
         glm::vec3 anchorPoint;

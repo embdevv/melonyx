@@ -22,6 +22,11 @@ namespace melonyx {
 		std::list<Cable*> Cables;
 
 		void AddParticle(melonyx::Particle* toAdd);
+		// Lets the demo configure gravity strength (Y-axis) from user input
+		// instead of being stuck with the hardcoded -9.8 default.
+		// Must be called BEFORE AddParticle() for particles to pick it up,
+		// since AddParticle() registers this Gravity generator immediately.
+		void SetGravity(const glm::vec3& gravity) { Gravity = GravityForceGenerator(gravity); }
 		void Update(float time);
 		void AddContact(melonyx::Particle* p1, melonyx::Particle* p2, float restitution,
 			glm::vec3 contactNormal, float depth);
