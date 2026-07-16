@@ -39,8 +39,8 @@ add_executable(melonyx
 # Include paths
 target_include_directories(melonyx PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/headers
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm-src
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad/include
 )
 
 # Link libraries
@@ -70,3 +70,10 @@ add_custom_command(TARGET melonyx POST_BUILD
         "$<TARGET_FILE_DIR:melonyx>/3D"
     COMMENT "Copying shaders and assets"
 )
+
+# Install the executable
+install(TARGETS melonyx DESTINATION bin)
+
+# If you have shaders or assets, install them too (adjust the path if needed)
+# This example installs the entire 'shaders' directory
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/ DESTINATION bin/shaders)
