@@ -38,9 +38,9 @@ add_executable(melonyx
 
 # Include paths
 target_include_directories(melonyx PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/glad/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/headers
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glad-src/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm-src
 )
 
 # Link libraries
