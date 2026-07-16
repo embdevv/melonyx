@@ -3,11 +3,11 @@
 
 cmake_minimum_required(VERSION ${CMAKE_VERSION}) # this file comes with cmake
 
-if(EXISTS "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitclone-lastrun.txt" AND EXISTS "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitinfo.txt" AND
-  "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitclone-lastrun.txt" IS_NEWER_THAN "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitinfo.txt")
+if(EXISTS "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitclone-lastrun.txt" AND EXISTS "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitinfo.txt" AND
+  "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitclone-lastrun.txt" IS_NEWER_THAN "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitinfo.txt")
   message(VERBOSE
     "Avoiding repeated git clone, stamp file is up to date: "
-    "'C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitclone-lastrun.txt'"
+    "'/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitclone-lastrun.txt'"
   )
   return()
 endif()
@@ -22,12 +22,12 @@ else()
 endif()
 
 execute_process(
-  COMMAND ${CMAKE_COMMAND} -E rm -rf "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-src"
+  COMMAND ${CMAKE_COMMAND} -E rm -rf "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-src"
   RESULT_VARIABLE error_code
   ${maybe_show_command}
 )
 if(error_code)
-  message(FATAL_ERROR "Failed to remove directory: 'C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-src'")
+  message(FATAL_ERROR "Failed to remove directory: '/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-src'")
 endif()
 
 # try the clone 3 times in case there is an odd git clone issue
@@ -35,9 +35,9 @@ set(error_code 1)
 set(number_of_tries 0)
 while(error_code AND number_of_tries LESS 3)
   execute_process(
-    COMMAND "C:/Program Files/Git/cmd/git.exe"
+    COMMAND "/run/current-system/sw/bin/git"
             clone --no-checkout --config "advice.detachedHead=false" "https://github.com/glfw/glfw" "glfw-src"
-    WORKING_DIRECTORY "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty"
+    WORKING_DIRECTORY "/home/embdev/Documents/GitHub/melonyx/thirdparty"
     RESULT_VARIABLE error_code
     ${maybe_show_command}
   )
@@ -51,9 +51,9 @@ if(error_code)
 endif()
 
 execute_process(
-  COMMAND "C:/Program Files/Git/cmd/git.exe"
+  COMMAND "/run/current-system/sw/bin/git"
           checkout "3.4" --
-  WORKING_DIRECTORY "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-src"
+  WORKING_DIRECTORY "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-src"
   RESULT_VARIABLE error_code
   ${maybe_show_command}
 )
@@ -64,24 +64,24 @@ endif()
 set(init_submodules TRUE)
 if(init_submodules)
   execute_process(
-    COMMAND "C:/Program Files/Git/cmd/git.exe" 
+    COMMAND "/run/current-system/sw/bin/git" 
             submodule update --recursive --init 
-    WORKING_DIRECTORY "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-src"
+    WORKING_DIRECTORY "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-src"
     RESULT_VARIABLE error_code
     ${maybe_show_command}
   )
 endif()
 if(error_code)
-  message(FATAL_ERROR "Failed to update submodules in: 'C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-src'")
+  message(FATAL_ERROR "Failed to update submodules in: '/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-src'")
 endif()
 
 # Complete success, update the script-last-run stamp file:
 #
 execute_process(
-  COMMAND ${CMAKE_COMMAND} -E copy "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitinfo.txt" "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitclone-lastrun.txt"
+  COMMAND ${CMAKE_COMMAND} -E copy "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitinfo.txt" "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitclone-lastrun.txt"
   RESULT_VARIABLE error_code
   ${maybe_show_command}
 )
 if(error_code)
-  message(FATAL_ERROR "Failed to copy script-last-run stamp file: 'C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitclone-lastrun.txt'")
+  message(FATAL_ERROR "Failed to copy script-last-run stamp file: '/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-gitclone-lastrun.txt'")
 endif()

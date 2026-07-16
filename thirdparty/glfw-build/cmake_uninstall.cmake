@@ -1,22 +1,22 @@
 
-if (NOT EXISTS "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-build/install_manifest.txt")
-    message(FATAL_ERROR "Cannot find install manifest: \"C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-build/install_manifest.txt\"")
+if (NOT EXISTS "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-build/install_manifest.txt")
+    message(FATAL_ERROR "Cannot find install manifest: \"/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-build/install_manifest.txt\"")
 endif()
 
-file(READ "C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glfw-build/install_manifest.txt" files)
+file(READ "/home/embdev/Documents/GitHub/melonyx/thirdparty/glfw-build/install_manifest.txt" files)
 string(REGEX REPLACE "\n" ";" files "${files}")
 
 foreach (file ${files})
   message(STATUS "Uninstalling \"$ENV{DESTDIR}${file}\"")
   if (EXISTS "$ENV{DESTDIR}${file}")
-    exec_program("C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
+    exec_program("/nix/store/rfad6gqp02yfhjkh7m080jzcrq104jq8-cmake-4.1.2/bin/cmake" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
                  OUTPUT_VARIABLE rm_out
                  RETURN_VALUE rm_retval)
     if (NOT "${rm_retval}" STREQUAL 0)
       MESSAGE(FATAL_ERROR "Problem when removing \"$ENV{DESTDIR}${file}\"")
     endif()
   elseif (IS_SYMLINK "$ENV{DESTDIR}${file}")
-    EXEC_PROGRAM("C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
+    EXEC_PROGRAM("/nix/store/rfad6gqp02yfhjkh7m080jzcrq104jq8-cmake-4.1.2/bin/cmake" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
                  OUTPUT_VARIABLE rm_out
                  RETURN_VALUE rm_retval)
     if (NOT "${rm_retval}" STREQUAL 0)

@@ -3,9 +3,9 @@
 # No other meaning or use of this file is supported.
 
 method=git
-command=C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/tmp/glm-populate-gitclone.cmake
-source_dir=C:/Users/embdev/Documents/GitHub/melonyx/thirdparty/glm-src
-work_dir=C:/Users/embdev/Documents/GitHub/melonyx/thirdparty
+command=/nix/store/rfad6gqp02yfhjkh7m080jzcrq104jq8-cmake-4.1.2/bin/cmake;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-subbuild/glm-populate-prefix/tmp/glm-populate-gitclone.cmake
+source_dir=/home/embdev/Documents/GitHub/melonyx/thirdparty/glm-src
+work_dir=/home/embdev/Documents/GitHub/melonyx/thirdparty
 repository=https://github.com/g-truc/glm.git
 remote=origin
 init_submodules=TRUE

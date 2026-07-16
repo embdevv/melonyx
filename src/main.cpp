@@ -2,16 +2,29 @@
  * @file main.cpp
  * @author Erica Mauriz Barundia
  *
- * Phase 2: Mass Aggregate - Newton's Cradle Demo
+ * Phase 2: Programming Challenge 2 - Prize Roulette Demo
  * ------------------------------------------------
- * - Gravity applied via Force Generator (PhysicsWorld::SetGravity)
- * - 5 particles, each joined to a fixed anchor point via a Cable
- * - Particle-particle collision handled automatically by PhysicsWorld
- * - User inputs simulation parameters at the console before the window opens
- * - Space: launches the left-most particle with the inputted force
- * - 1 / 2: switch between orthographic (2D-style) and perspective (3D) view
- * - WASD: rotate camera (perspective view only)
- * - ESC: quit
+ * Design note: the wheel is a single ROTATIONAL degree of freedom, not
+ * 5 independently-simulated point masses. So instead of faking circular
+ * motion with 5 separately-cabled particles (like the Newton's Cradle
+ * demo did), a single melonyx::Particle ("wheelState") represents the
+ * wheel's spin: Position.x = current angle (radians), Velocity.x =
+ * angular velocity. It still goes through the engine's real integrator
+ * (UpdatePosition / UpdateVelocity / damping via Particle::Update), just
+ * applied to a rotational quantity instead of a linear one. The 5 colored
+ * spheres are then rendered kinematically at their angular offset from
+ * that single wheel angle.
+ *
+ * - 5 particles, 50kg each, distinct colors, each mapped to a prize
+ * - Legend (color -> prize) is printed to console BEFORE the window opens
+ * - User then inputs a 2D force (Fx, Fy), applied as a torque to whichever
+ *   particle is on top at that instant (tau = rx*Fy - ry*Fx)
+ * - Wheel spins and slows down naturally via damping
+ * - Holding Space applies extra braking so it slows down faster
+ * - Once angular velocity settles near zero, the sim freezes and waits
+ *   for Enter in the console before printing the winning prize and exiting
+ * - Perspective projection only, fixed camera framing the whole wheel
+ * - ESC: quit early
  */
 
 #include <iostream>
@@ -19,6 +32,7 @@
 #include <chrono>
 #include <vector>
 #include <cmath>
+#include <limits>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -30,96 +44,116 @@
 #include "headers/shader.h"
 #include "headers/particle.h"
 #include "headers/render_particle.h"
-#include "headers/world_particle.h"
-#include "headers/cable.h"
 
 using namespace std;
 using namespace chrono_literals;
 
 // ===== WINDOW =====
 const int    WINDOW_SIZE = 800;
-const string WINDOW_TITLE = "melonYX engine";
+const string WINDOW_TITLE = "PC02 Barundia";
 
-// ===== NUMBER OF PARTICLES IN THE CRADLE =====
-const int NUM_PARTICLES = 5;
+// ===== WHEEL LAYOUT =====
+const int   NUM_PARTICLES  = 5;
+const float WHEEL_RADIUS   = 220.0f;
+const float PARTICLE_RADIUS= 35.0f;
+const float PARTICLE_MASS  = 50.0f;
 
-// ===== SIMULATION PARAMETERS (filled in from console input) =====
-struct SimParams {
-    float cableLength;
-    float particleGap;
-    float particleRadius;
-    float gravityStrength; // Y-axis gravity (magnitude, will be applied as negative Y)
-    glm::vec3 applyForce;      // force applied to left-most particle on Space
+// Natural (passive) spin-down damping, applied every physics tick regardless
+// of input, same mechanism as Particle::damping used in the Cradle demo.
+// NOTE: Particle::Update applies this as velocity *= powf(damping, dt), which
+// compounds continuously -- so `damping` is literally "fraction of velocity
+// remaining after 1 full second." 0.6 means it decays to a natural stop over
+// roughly 8-12 seconds for a typical test spin.
+const float WHEEL_DAMPING = 0.6f;
+
+// Extra multiplicative decay applied ON TOP of WHEEL_DAMPING while Space is
+// held, so the wheel brakes noticeably faster than letting it stop on its own.
+// 0.05 means velocity drops to ~5% within about 1 second of holding Space.
+const float BRAKE_DAMPING = 0.05f;
+
+// Angular velocity magnitude below which the wheel is considered "stopped".
+const float STOP_THRESHOLD = 0.01f;
+// Consecutive frames it must stay below threshold before we trust it (debounce).
+const int   STOP_DEBOUNCE_FRAMES = 20;
+
+// ===== PRIZE TABLE (color -> prize) =====
+struct PrizeSlot {
+    string    colorName;
+    glm::vec3 color;
+    string    prize;
 };
 
-// ===== CAMERA STATE =====
-struct CameraState {
-    int   viewMode = 1;      // 1 = orthographic, 2 = perspective
-    float yaw = 0.0f;        // radians, rotate around Y
-    float pitch = 0.3f;      // radians, clamp to avoid flipping
-    float distance = 700.0f; // orbit distance for perspective view
+const vector<PrizeSlot> PRIZES = {
+    { "Ruby",     glm::vec3(0.75f, 0.05f, 0.20f), "50 Credits"     },
+    { "Amber",    glm::vec3(0.85f, 0.50f, 0.05f), "Extra Life"     },
+    { "Citrine",  glm::vec3(0.80f, 0.75f, 0.10f), "Speed Boost"    },
+    { "Emerald",  glm::vec3(0.05f, 0.55f, 0.30f), "Shield Charge"  },
+    { "Sapphire", glm::vec3(0.10f, 0.25f, 0.70f), "JACKPOT SPIN"   },
 };
 
-// ===== APP CONTEXT (used for key callback + Space launch) =====
-struct AppContext {
-    melonyx::Particle* leftMostParticle = nullptr;
-    glm::vec3 force = glm::vec3(0.0f);
-};
-
-static SimParams ReadSimParams()
+// Base angular offset of particle i around the wheel, spaced 360/5 = 72
+// degrees apart, with particle 0 starting exactly at the top (90 deg / pi/2).
+static float BaseAngle(int i)
 {
-    SimParams p{};
-    cout << "===== Newton's Cradle Setup =====\n";
-
-    cout << "Cable Length: ";
-    cin >> p.cableLength;
-
-    cout << "Particle Gap (distance between particle centers): ";
-    cin >> p.particleGap;
-
-    cout << "Particle Radius: ";
-    cin >> p.particleRadius;
-
-    cout << "Gravity Strength (Y-axis): ";
-    cin >> p.gravityStrength;
-
-    cout << "Apply Force (applied to left-most particle when you press Space): ";
-    cout << "x: ";
-    cin >> p.applyForce.x;
-    cout << "y: ";
-    cin >> p.applyForce.y;
-    cout << "z: ";
-    cin >> p.applyForce.z;
-
-
-    cout << "==================================\n";
-    cout << "Setup complete. Press Space in the window to launch!\n";
-
-    return p;
+    return glm::half_pi<float>() + i * (glm::two_pi<float>() / (float)NUM_PARTICLES);
 }
 
-// ===== KEY CALLBACK (edge-triggered events: ESC + Space) =====
+// Normalize an angle into (-pi, pi]
+static float NormalizeAngle(float a)
+{
+    a = fmodf(a, glm::two_pi<float>());
+    if (a > glm::pi<float>())  a -= glm::two_pi<float>();
+    if (a < -glm::pi<float>()) a += glm::two_pi<float>();
+    return a;
+}
+
+// Which particle index is currently closest to "top" (angle = pi/2)?
+static int GetTopIndex(float wheelAngle)
+{
+    int   best = 0;
+    float bestDiff = std::numeric_limits<float>::max();
+    for (int i = 0; i < NUM_PARTICLES; i++)
+    {
+        float theta = BaseAngle(i) + wheelAngle;
+        float diff = fabsf(NormalizeAngle(theta - glm::half_pi<float>()));
+        if (diff < bestDiff) { bestDiff = diff; best = i; }
+    }
+    return best;
+}
+
+// ===== APP CONTEXT (only ESC needs a callback here; Space is polled) =====
+struct AppContext {
+    bool escPressed = false;
+};
+
 void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        AppContext* ctx = static_cast<AppContext*>(glfwGetWindowUserPointer(window));
-        if (ctx && ctx->leftMostParticle)
-        {
-            // One-shot force applied on the frame Space is pressed.
-            // Particle::ResetForce() clears accumulated force every Update(),
-            // so this behaves like a launch impulse, not a sustained push.
-            ctx->leftMostParticle->AddForce(ctx->force);
-        }
-    }
 }
 
 int main()
 {
-    SimParams params = ReadSimParams();
+    // ===== BEFORE THE SIMULATION: print the prize legend =====
+    cout << "+--------------------------------------+\n";
+    cout << "|         M E L O N Y X  S P I N        |\n";
+    cout << "+--------------------------------------+\n";
+    cout << "  Gem       Prize\n";
+    cout << "  --------  --------------\n";
+    for (auto& slot : PRIZES)
+        cout << "  " << slot.colorName << string(10 - slot.colorName.size(), ' ') << slot.prize << "\n";
+
+    // ===== BEFORE THE SIMULATION: read the 2D force to apply =====
+    glm::vec2 inputForce{};
+    cout << "\nGive the wheel a spin -- enter a 2D force:\n";
+    cout << "x: ";
+    cin >> inputForce.x;
+    cout << "y: ";
+    cin >> inputForce.y;
+
+    cout << "+--------------------------------------+\n";
+    cout << "  Spinning up... hold SPACE to brake.\n";
+    cout << "  ESC to quit early.\n";
 
     constexpr chrono::nanoseconds timestep(16ms);
     constexpr float timestep_sec = timestep.count() / (float)(1E09);
@@ -175,82 +209,74 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.08f, 0.08f, 0.08f, 1.0f);
 
-    // ===== PHYSICS WORLD SETUP =====
-    melonyx::PhysicsWorld pWorld = melonyx::PhysicsWorld();
+    // ===== WHEEL STATE (single rotational particle, engine-driven) =====
+    // Not added to a PhysicsWorld: there's no gravity or particle-particle
+    // collision here, just one rotational DOF using the engine's own
+    // Particle::Update integrator (mass here = moment-of-inertia analog).
+    melonyx::Particle wheelState;
+    wheelState.mass    = PARTICLE_MASS * NUM_PARTICLES; // heavier wheel = tamer spin per unit force
+    wheelState.damping = WHEEL_DAMPING;
+    wheelState.Position = glm::vec3(0.0f);
+    wheelState.Velocity = glm::vec3(0.0f);
+    wheelState.Acceleration = glm::vec3(0.0f);
 
-    // Gravity Strength is user-configurable in the Y-axis (must be set
-    // before AddParticle, since particles register the world's gravity
-    // generator immediately when added)
-    pWorld.SetGravity(glm::vec3(0.0f, params.gravityStrength, 0.0f));
+    // Apply the user's force as a torque impulse to the top-most particle,
+    // right as the simulation starts (angle = 0, so GetTopIndex(0) applies).
+    {
+        int topIdx = GetTopIndex(wheelState.Position.x);
+        float theta = BaseAngle(topIdx);
+        glm::vec2 r(cosf(theta) * WHEEL_RADIUS, sinf(theta) * WHEEL_RADIUS);
+        float torque = r.x * inputForce.y - r.y * inputForce.x;
+        wheelState.AddForce(glm::vec3(torque, 0.0f, 0.0f));
+    }
 
-    // ===== BUILD THE CRADLE: 5 particles, each on its own cable =====
-    // Anchor height = cable length, so at REST every particle hangs at y = 0,
-    // keeping the cradle centered vertically in the 800x800 window.
-    // Anchor X spacing = particleGap, centered so the 3rd particle (index 2)
-    // sits at x = 0 at the start, per spec.
-    const float anchorY = params.cableLength;
-
-    vector<melonyx::Particle>     particles(NUM_PARTICLES);
-    vector<glm::vec3>              anchors(NUM_PARTICLES);
-    vector<melonyx::Cable*>        cables(NUM_PARTICLES);
-    vector<RenderParticle*>        renderParticles(NUM_PARTICLES);
+    // ===== RENDER PARTICLES (kinematic: positioned each frame from wheel angle) =====
+    vector<melonyx::Particle> particles(NUM_PARTICLES);
+    vector<RenderParticle*>   renderParticles(NUM_PARTICLES);
 
     for (int i = 0; i < NUM_PARTICLES; i++)
     {
-        float anchorX = (i - (NUM_PARTICLES / 2)) * params.particleGap;
-        anchors[i] = glm::vec3(anchorX, anchorY, 0.0f);
-
-        // Particles as per spec
-        particles[i].mass = 50.0f;
+        particles[i].mass        = PARTICLE_MASS;
+        particles[i].radius      = PARTICLE_RADIUS;
         particles[i].restitution = 0.9f;
-        particles[i].radius = params.particleRadius;
-        particles[i].damping = 0.999f;
 
-        // Start right at the anchor (slack cable) so they visibly
-        // "drop down" under gravity until the cable goes taut.
-        particles[i].Position = anchors[i] + glm::vec3(0.0f, -1.0f, 0.0f);
-        particles[i].Velocity = glm::vec3(0.0f);
-        particles[i].Acceleration = glm::vec3(0.0f);
+        float theta = BaseAngle(i) + wheelState.Position.x;
+        particles[i].Position = glm::vec3(cosf(theta) * WHEEL_RADIUS, sinf(theta) * WHEEL_RADIUS, 0.0f);
 
-        pWorld.AddParticle(&particles[i]);
-
-        // Cable: anchors particle to a fixed point, never exceeds cableLength
-        melonyx::Cable* cable = new melonyx::Cable(anchors[i], params.cableLength, 0.9f);
-        cable->particle = &particles[i];
-        cables[i] = cable;
-        pWorld.Cables.push_back(cable);
-
-        renderParticles[i] = new RenderParticle(&particles[i], &sphere, glm::vec3(0.85f, 0.15f, 0.15f));
+        renderParticles[i] = new RenderParticle(&particles[i], &sphere, PRIZES[i].color);
     }
 
-    // ===== APP CONTEXT for key callback (Space launches left-most particle) =====
     AppContext appCtx;
-    appCtx.leftMostParticle = &particles[0];
-    appCtx.force = params.applyForce;
     glfwSetWindowUserPointer(window, &appCtx);
     glfwSetKeyCallback(window, KeyCallback);
 
-    // ===== CABLE LINE VAO (persistent, updated each frame, reused per cable) =====
-    GLuint cableLineVAO, cableLineVBO;
-    glGenVertexArrays(1, &cableLineVAO);
-    glGenBuffers(1, &cableLineVBO);
-    glBindVertexArray(cableLineVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, cableLineVBO);
+    // ===== ROD LINE VAO (persistent, updated each frame, reused per spoke) =====
+    // Visual spokes from the wheel's center to each particle, same technique
+    // as the Cradle demo's cable-line rendering.
+    const glm::vec3 wheelCenter = glm::vec3(0.0f, 0.0f, 0.0f);
+    GLuint rodLineVAO, rodLineVBO;
+    glGenVertexArrays(1, &rodLineVAO);
+    glGenBuffers(1, &rodLineVBO);
+    glBindVertexArray(rodLineVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, rodLineVBO);
     glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 
-    // ===== CAMERA =====
-    CameraState camera;
-    const float orthoSize = WINDOW_SIZE / 2.0f; // 400, matches 1m:1px scale for the 800x800 window
+    // ===== CAMERA: fixed perspective, framed so the whole wheel stays visible =====
     const glm::vec3 orbitCenter = glm::vec3(0.0f, 0.0f, 0.0f);
-    const float camRotateSpeed = 1.5f; // radians/sec
+    const glm::vec3 cameraEye   = glm::vec3(0.0f, 0.0f, 700.0f);
+    const glm::mat4 projection  = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 3000.0f);
+    const glm::mat4 view        = glm::lookAt(cameraEye, orbitCenter, glm::vec3(0.0f, 1.0f, 0.0f));
 
     using clock = chrono::high_resolution_clock;
     auto curr_time = clock::now();
     auto prev_time = curr_time;
     chrono::nanoseconds curr_ns(0);
+
+    int  stoppedFrames = 0;
+    bool wheelStopped  = false;
 
     // ===== RENDER LOOP =====
     while (!glfwWindowShouldClose(window))
@@ -262,58 +288,53 @@ int main()
         auto dur = chrono::duration_cast<chrono::nanoseconds>(curr_time - prev_time);
         prev_time = curr_time;
         curr_ns += dur;
-        float frameDt = dur.count() / (float)(1E09);
 
-        // --- View switching (1/2) ---
-        if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) camera.viewMode = 1;
-        if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) camera.viewMode = 2;
-
-        // --- Camera rotation (WASD), only meaningful in perspective view ---
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera.yaw -= camRotateSpeed * frameDt;
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera.yaw += camRotateSpeed * frameDt;
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera.pitch += camRotateSpeed * frameDt;
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera.pitch -= camRotateSpeed * frameDt;
-        camera.pitch = glm::clamp(camera.pitch, -1.5f, 1.5f);
-
-        // --- Physics update (fixed timestep) ---
-        while (curr_ns >= timestep) {
-            curr_ns -= timestep;
-            pWorld.Update(timestep_sec);
-        }
-
-        // --- Build projection/view for the active camera mode ---
-        glm::mat4 projection, view;
-        if (camera.viewMode == 1)
+        if (!wheelStopped)
         {
-            // Orthographic front view (2D-style), 1m:1px scale
-            projection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, 0.1f, 2000.0f);
-            view = glm::lookAt(
-                glm::vec3(0.0f, 0.0f, 500.0f),
-                glm::vec3(0.0f, 0.0f, 0.0f),
-                glm::vec3(0.0f, 1.0f, 0.0f)
-            );
-        }
-        else
-        {
-            // Perspective view, orbit-able with WASD
-            projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 3000.0f);
-            glm::vec3 eye = orbitCenter + camera.distance * glm::vec3(
-                cosf(camera.pitch) * sinf(camera.yaw),
-                sinf(camera.pitch),
-                cosf(camera.pitch) * cosf(camera.yaw)
-            );
-            view = glm::lookAt(eye, orbitCenter, glm::vec3(0.0f, 1.0f, 0.0f));
+            bool braking = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+
+            // --- Physics update (fixed timestep) ---
+            while (curr_ns >= timestep)
+            {
+                curr_ns -= timestep;
+                wheelState.Update(timestep_sec);
+
+                // Extra braking on top of the wheel's passive damping.
+                if (braking)
+                    wheelState.Velocity.x *= powf(BRAKE_DAMPING, timestep_sec);
+
+                // Debounced "has it basically stopped?" check.
+                if (fabsf(wheelState.Velocity.x) < STOP_THRESHOLD)
+                {
+                    stoppedFrames++;
+                    if (stoppedFrames >= STOP_DEBOUNCE_FRAMES)
+                    {
+                        wheelState.Velocity.x = 0.0f;
+                        wheelStopped = true;
+                    }
+                }
+                else
+                {
+                    stoppedFrames = 0;
+                }
+            }
+
+            // --- Update rendered particle positions from the wheel angle ---
+            for (int i = 0; i < NUM_PARTICLES; i++)
+            {
+                float theta = BaseAngle(i) + wheelState.Position.x;
+                particles[i].Position = glm::vec3(cosf(theta) * WHEEL_RADIUS, sinf(theta) * WHEEL_RADIUS, 0.0f);
+            }
         }
 
         // --- Render ---
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shader);
 
-        // Draw particles
         for (int i = 0; i < NUM_PARTICLES; i++)
             renderParticles[i]->Draw(shader, projection, view);
 
-        // Draw cable lines (anchor -> particle), one draw call per cable
+        // Draw rod spokes (center -> particle), one draw call per rod
         glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(shader, "transform"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
@@ -321,30 +342,51 @@ int main()
 
         for (int i = 0; i < NUM_PARTICLES; i++)
         {
-            float lineVerts[] = {
-                anchors[i].x, anchors[i].y, anchors[i].z,
+            float rodVerts[] = {
+                wheelCenter.x, wheelCenter.y, wheelCenter.z,
                 particles[i].Position.x, particles[i].Position.y, particles[i].Position.z
             };
 
-            glBindBuffer(GL_ARRAY_BUFFER, cableLineVBO);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(lineVerts), lineVerts);
+            glBindBuffer(GL_ARRAY_BUFFER, rodLineVBO);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(rodVerts), rodVerts);
 
-            glBindVertexArray(cableLineVAO);
+            glBindVertexArray(rodLineVAO);
             glDrawArrays(GL_LINES, 0, 2);
             glBindVertexArray(0);
         }
 
         glfwSwapBuffers(window);
+
+        // Once the wheel has settled, break out and go wait on the console.
+        if (wheelStopped)
+            break;
+    }
+
+    // ===== WAIT FOR ENTER, THEN PRINT THE RESULT AND EXIT =====
+    if (wheelStopped && !glfwWindowShouldClose(window))
+    {
+        cout << "\nThe wheel has stopped. Press Enter to reveal your prize...";
+        cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        cin.get();
+
+        int winner = GetTopIndex(wheelState.Position.x);
+        cout << "\nResult: " << PRIZES[winner].colorName
+             << " -> You won: " << PRIZES[winner].prize << "\n";
+
+        // Keep the console open until the user explicitly dismisses it --
+        // otherwise, on Windows especially, launching the .exe directly
+        // (not from an already-open terminal) closes the console the
+        // instant main() returns, before the result is even readable.
+        cout << "\nPress Enter to exit...";
+        cin.get();
     }
 
     // Cleanup
     cout << "Shutting down Melonyx Engine" << endl;
-    glDeleteVertexArrays(1, &cableLineVAO);
-    glDeleteBuffers(1, &cableLineVBO);
+    glDeleteVertexArrays(1, &rodLineVAO);
+    glDeleteBuffers(1, &rodLineVBO);
     for (int i = 0; i < NUM_PARTICLES; i++)
         delete renderParticles[i];
-    // Cables are owned by pWorld.Cables; no explicit cleanup path existed
-    // before either, consistent with the engine's current lifetime model.
     sphere.cleanup();
     glDeleteProgram(shader);
     glfwTerminate();
