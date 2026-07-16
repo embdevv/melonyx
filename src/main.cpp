@@ -178,7 +178,7 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
-    if (!gladLoadGL(glfwGetProcAddress)) {
+    if (!gladLoadGL()) {
         cerr << "Glad init failed" << endl;
         return -1;
     }
