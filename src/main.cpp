@@ -3,7 +3,7 @@
  * @author Erica Mauriz Barundia
  *
  * Dead Men Drink No Rum
- * Milestone 3: Cannon + Aiming
+ * Milestone 4: Pirate + Rotation + Mesh Rendering
  */
 
 #include <iostream>
@@ -17,19 +17,23 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "headers/constants.h"
-#include "headers/game_state.h"
-#include "headers/level.h"
-#include "headers/particle.h"
+#include "headers/pirate/constants.h"
+#include "headers/pirate/game_state.h"
+#include "headers/pirate/level.h"
+#include "headers/pirate/bottle.h"
+#include "headers/pirate/collision.h"
+#include "headers/pirate/cannon.h"
+#include "headers/pirate/pirate.h"
+
 #include "headers/world_particle.h"
 #include "headers/force_gen.h"
 #include "headers/force_registry.h"
 #include "headers/gravity_force_gen.h"
 #include "headers/drag_force_gen.h"
-#include "headers/bottle.h"
-#include "headers/collision.h"
-#include "headers/cannon.h"
+
 #include "headers/shader.h"
+#include "headers/render_particle.h"
+#include "headers/main.h"
 
 using namespace std;
 using namespace chrono_literals;
@@ -53,20 +57,26 @@ LevelConfig gLevel          = getLevelConfig(1);
 // Physics
 // ───────────────────────────────────────────────────────────────────────────
 melonyx::PhysicsWorld pWorld;
-melonyx::Particle     pirate;
+pirategame::Pirate    pirate;
 GravityForceGenerator gravityGen(glm::vec3(0.0f, -GRAVITY, 0.0f));
 DragForceGenerator    dragGen(DRAG_K1, DRAG_K2);
 
 // ───────────────────────────────────────────────────────────────────────────
-// Cannon — sits bottom-left of screen
+// Scene objects
 // ───────────────────────────────────────────────────────────────────────────
-pirategame::Cannon gCannon(-350.0f, -350.0f);
+pirategame::Cannon         gCannon(-350.0f, -350.0f);
+vector<pirategame::Bottle> gBottles;
+
+// ───────────────────────────────────────────────────────────────────────────
+// Meshes
+// ───────────────────────────────────────────────────────────────────────────
+ObjMesh pirateMesh;   // reuses sphere.obj for now — swap for pirate.obj later
+ObjMesh bottleMesh;   // same sphere, different color + scale
+ObjMesh cannonMesh;   // same sphere for cannon base
 
 // ───────────────────────────────────────────────────────────────────────────
 // Bottles
 // ───────────────────────────────────────────────────────────────────────────
-vector<pirategame::Bottle> gBottles;
-
 void loadLevelBottles(int level)
 {
     gBottles.clear();
@@ -94,46 +104,27 @@ void loadLevelBottles(int level)
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Pirate reset
-// ───────────────────────────────────────────────────────────────────────────
-void resetPirate()
-{
-    // Spawn at cannon muzzle
-    glm::vec3 muzzle    = gCannon.muzzlePosition();
-    pirate.Position     = muzzle;
-    pirate.Velocity     = glm::vec3(0.0f);
-    pirate.Acceleration = glm::vec3(0.0f);
-    pirate.mass         = 1.0f;
-    pirate.damping      = 0.999f;
-    pirate.radius       = PIRATE_RADIUS;
-    pirate.ResetForce();
-}
-
-// ───────────────────────────────────────────────────────────────────────────
 // Level / state transitions
 // ───────────────────────────────────────────────────────────────────────────
 void startLevel(int level)
 {
-    gCurrentLevel = level;
-    gLevel        = getLevelConfig(level);
-    loadLevelBottles(level);
-    resetPirate();
-    gState          = GameState::AIMING;
+    gCurrentLevel   = level;
+    gLevel          = getLevelConfig(level);
     gBottlesThisRun = 0;
+    pWorld          = melonyx::PhysicsWorld();
+    loadLevelBottles(level);
 
-    // Reset physics world for new level
-    pWorld = melonyx::PhysicsWorld();
-
-    cout << "[LEVEL] Level " << level
-         << " | quota: " << gLevel.bottleQuota << "\n";
+    pirate.reset(gCannon.muzzlePosition());
+    gState = GameState::AIMING;
+    cout << "[LEVEL] Level " << level << " | quota: " << gLevel.bottleQuota << "\n";
 }
 
 void launchPirate()
 {
-    resetPirate();
     pWorld = melonyx::PhysicsWorld();
-
-    pirate.Velocity = gCannon.fire();  // ← real cannon velocity
+    pirate.reset(gCannon.muzzlePosition());
+    pirate.Velocity = gCannon.fire();
+    pirate.onLaunch(gCannon.power);  // sets spin based on power
 
     pWorld.AddParticle(&pirate);
     pWorld.forceRegistry.Add(&pirate, &gravityGen);
@@ -141,21 +132,22 @@ void launchPirate()
 
     gState = GameState::LAUNCHED;
     cout << "[LAUNCH] angle=" << gCannon.angleDeg
-         << "deg  power=" << gCannon.power
-         << "  vel=(" << pirate.Velocity.x
-         << ", "      << pirate.Velocity.y << ")\n";
+         << " power=" << gCannon.power << "\n";
 }
 
 void onFlightEnd(bool drowned)
 {
     gBottlesThisRun = pirategame::bottlesCollected(gBottles);
+    pirate.inWater  = drowned;
+    pirate.landed   = !drowned;
+
     cout << "[RESULT] Bottles: " << gBottlesThisRun << "\n";
 
     if (drowned || gBottlesThisRun == 0) {
         gState        = GameState::GAME_OVER;
         gBottlesTotal = 0;
         startLevel(1);
-        cout << "[STATE] GAME_OVER — reset\n";
+        cout << "[STATE] GAME_OVER\n";
         return;
     }
 
@@ -166,7 +158,7 @@ void onFlightEnd(bool drowned)
     } else {
         if (gBottlesTotal >= TOTAL_QUOTA) {
             gState = GameState::WIN;
-            cout << "[STATE] WIN — " << gBottlesTotal << " bottles total\n";
+            cout << "[STATE] WIN — " << gBottlesTotal << " bottles\n";
         } else {
             gState        = GameState::GAME_OVER;
             gBottlesTotal = 0;
@@ -177,24 +169,22 @@ void onFlightEnd(bool drowned)
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Trajectory preview — simulates arc without touching physics world
+// Trajectory preview
 // ───────────────────────────────────────────────────────────────────────────
 vector<glm::vec2> computeTrajectory()
 {
-    vector<glm::vec2> points;
+    vector<glm::vec2> pts;
     glm::vec2 pos(gCannon.muzzlePosition());
     glm::vec2 vel(gCannon.fire());
 
     for (int i = 0; i < PREVIEW_STEPS; i++) {
         vel.y -= GRAVITY * PREVIEW_DT;
-        vel   *= (1.0f - DRAG_K1 * PREVIEW_DT); // approximate drag
+        vel   *= (1.0f - DRAG_K1 * PREVIEW_DT);
         pos   += vel * PREVIEW_DT;
-        points.push_back(pos);
-
-        // Stop preview at water line
+        pts.push_back(pos);
         if (pos.y < gLevel.waterLine) break;
     }
-    return points;
+    return pts;
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -207,32 +197,26 @@ static void keyCallback(GLFWwindow* window, int key, int, int action, int)
 
     if (action == GLFW_PRESS || action == GLFW_REPEAT)
     {
-        if (gState == GameState::AIMING)
-        {
-            if (key == GLFW_KEY_LEFT)  { gCannon.rotateLeft();  cout << "[AIM] angle=" << gCannon.angleDeg << "\n"; }
-            if (key == GLFW_KEY_RIGHT) { gCannon.rotateRight(); cout << "[AIM] angle=" << gCannon.angleDeg << "\n"; }
-            if (key == GLFW_KEY_UP)    { gCannon.powerUp();     cout << "[AIM] power=" << gCannon.power    << "\n"; }
-            if (key == GLFW_KEY_DOWN)  { gCannon.powerDown();   cout << "[AIM] power=" << gCannon.power    << "\n"; }
+        if (gState == GameState::AIMING) {
+            if (key == GLFW_KEY_LEFT)  gCannon.rotateLeft();
+            if (key == GLFW_KEY_RIGHT) gCannon.rotateRight();
+            if (key == GLFW_KEY_UP)    gCannon.powerUp();
+            if (key == GLFW_KEY_DOWN)  gCannon.powerDown();
             if (key == GLFW_KEY_SPACE) launchPirate();
             if (key == GLFW_KEY_R)     startLevel(gCurrentLevel);
         }
-
-        if (gState == GameState::GAME_OVER || gState == GameState::WIN)
-        {
+        if (gState == GameState::GAME_OVER || gState == GameState::WIN) {
             if (key == GLFW_KEY_R) startLevel(1);
         }
     }
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// OpenGL helpers — simple colored point/dot for debug rendering
+// Dot renderer (trajectory + water line)
 // ───────────────────────────────────────────────────────────────────────────
-// We'll draw dots for trajectory preview and bottles using GL_POINTS
-// Full sprite rendering comes in Milestone 4 with the pirate mesh
-
-GLuint gShader  = 0;
-GLuint gDotVAO  = 0;
-GLuint gDotVBO  = 0;
+GLuint gShader = 0;
+GLuint gDotVAO = 0;
+GLuint gDotVBO = 0;
 
 void initDotRenderer()
 {
@@ -266,6 +250,20 @@ void drawDot(const glm::vec2& pos, const glm::mat4& proj, const glm::mat4& view,
 }
 
 // ───────────────────────────────────────────────────────────────────────────
+// Draw a mesh at a given model matrix
+// ───────────────────────────────────────────────────────────────────────────
+void drawMesh(ObjMesh& mesh, const glm::mat4& model,
+              const glm::mat4& proj, const glm::mat4& view,
+              float r, float g, float b)
+{
+    glUniformMatrix4fv(glGetUniformLocation(gShader, "model"),      1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(glGetUniformLocation(gShader, "view"),       1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(gShader, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
+    glUniform3f(glGetUniformLocation(gShader, "color"), r, g, b);
+    mesh.draw();
+}
+
+// ───────────────────────────────────────────────────────────────────────────
 // Main
 // ───────────────────────────────────────────────────────────────────────────
 int main()
@@ -283,17 +281,24 @@ int main()
     glfwSwapInterval(1);
     glfwSetKeyCallback(window, keyCallback);
 
-    if (!gladLoadGL(glfwGetProcAddress)) {
+    if (!gladLoadGL()) {
         cerr << "GLAD failed\n"; glfwTerminate(); return -1;
     }
-
     cout << "OpenGL: " << glGetString(GL_VERSION) << "\n";
 
     gShader = compileShaders("shaders/sample.vert", "shaders/sample.frag");
     if (!gShader) { cerr << "Shader failed\n"; glfwTerminate(); return -1; }
 
+    // Load meshes — all using sphere.obj for now
+    if (!pirateMesh.load("3D/sphere.obj"))  { cerr << "pirate mesh failed\n"; return -1; }
+    if (!bottleMesh.load("3D/sphere.obj"))  { cerr << "bottle mesh failed\n"; return -1; }
+    if (!cannonMesh.load("3D/sphere.obj"))  { cerr << "cannon mesh failed\n"; return -1; }
+    pirateMesh.upload();
+    bottleMesh.upload();
+    cannonMesh.upload();
+
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_PROGRAM_POINT_SIZE);
+    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
     glClearColor(0.05f, 0.12f, 0.25f, 1.0f);
 
     initDotRenderer();
@@ -320,12 +325,16 @@ int main()
             if (gState == GameState::LAUNCHED)
             {
                 pWorld.Update(timestep_sec);
+                pirate.updateRotation(timestep_sec);  // spin every step
 
                 auto result = pirategame::checkCollisions(
                     pirate, gBottles, gLevel.waterLine);
 
-                if (result.hitBottle)
+                if (result.hitBottle) {
+                    // Spike spin on bottle hit
+                    pirate.onCollisionHit(glm::length(pirate.Velocity));
                     cout << "[HIT] " << result.bottlesHit << " bottle(s)\n";
+                }
 
                 bool outOfBounds = pirate.Position.x >  ORTHO_SIZE + 50.0f
                                 || pirate.Position.x < -ORTHO_SIZE - 50.0f;
@@ -346,50 +355,55 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(gShader);
 
-        const float orthoSize = ORTHO_SIZE;
         glm::mat4 proj = glm::ortho(
-            -orthoSize, orthoSize, -orthoSize, orthoSize, 0.1f, 1000.0f);
+            -ORTHO_SIZE, ORTHO_SIZE, -ORTHO_SIZE, ORTHO_SIZE, 0.1f, 1000.0f);
         glm::mat4 view = glm::lookAt(
             glm::vec3(0, 0, 500), glm::vec3(0), glm::vec3(0, 1, 0));
 
-        if (gState == GameState::AIMING)
+        // ── Cannon (yellow sphere) ────────────────────────────────────
         {
-            // Draw trajectory preview — white dots
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(gCannon.position, 0.0f));
+            model = glm::rotate(model, glm::radians(gCannon.angleDeg), glm::vec3(0, 0, 1));
+            model = glm::scale(model, glm::vec3(25.0f));
+            drawMesh(cannonMesh, model, proj, view, 0.9f, 0.7f, 0.1f);
+        }
+
+        // ── Trajectory preview (aiming only) ─────────────────────────
+        if (gState == GameState::AIMING) {
             auto traj = computeTrajectory();
-            for (auto& pt : traj)
-                drawDot(pt, proj, view, 1.0f, 1.0f, 1.0f, 4.0f);
-
-            // Draw cannon position — yellow dot
-            drawDot(gCannon.position, proj, view, 1.0f, 0.8f, 0.0f, 16.0f);
-
-            // Draw muzzle tip — orange dot
-            glm::vec2 muzzle(gCannon.muzzlePosition());
-            drawDot(muzzle, proj, view, 1.0f, 0.5f, 0.0f, 10.0f);
+            for (int i = 0; i < (int)traj.size(); i += 2)  // every other dot
+                drawDot(traj[i], proj, view, 1.0f, 1.0f, 1.0f, 4.0f);
         }
 
-        if (gState == GameState::LAUNCHED)
-        {
-            // Draw pirate — red dot
-            glm::vec2 piratePos(pirate.Position.x, pirate.Position.y);
-            drawDot(piratePos, proj, view, 1.0f, 0.1f, 0.1f, 20.0f);
+        // ── Pirate (red sphere, spinning) ─────────────────────────────
+        if (gState == GameState::LAUNCHED) {
+            drawMesh(pirateMesh, pirate.modelMatrix(20.0f), proj, view,
+                     0.9f, 0.15f, 0.15f);
         }
 
-        // Draw bottles — green = uncollected, grey = collected
-        for (auto& b : gBottles)
-        {
+        // ── Bottles ───────────────────────────────────────────────────
+        for (auto& b : gBottles) {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(b.position, 0.0f));
+            model = glm::scale(model, glm::vec3(BOTTLE_RADIUS));
             if (b.collected)
-                drawDot(b.position, proj, view, 0.4f, 0.4f, 0.4f, 14.0f);
+                drawMesh(bottleMesh, model, proj, view, 0.3f, 0.3f, 0.3f);
             else
-                drawDot(b.position, proj, view, 0.1f, 0.9f, 0.2f, 14.0f);
+                drawMesh(bottleMesh, model, proj, view, 0.2f, 0.85f, 0.3f);
         }
 
-        // Draw water line — blue horizontal dots
-        for (float x = -orthoSize; x <= orthoSize; x += 20.0f)
-            drawDot(glm::vec2(x, gLevel.waterLine), proj, view, 0.1f, 0.3f, 0.9f, 4.0f);
+        // ── Water line (blue dots) ─────────────────────────────────────
+        for (float x = -ORTHO_SIZE; x <= ORTHO_SIZE; x += 30.0f)
+            drawDot(glm::vec2(x, gLevel.waterLine), proj, view,
+                    0.1f, 0.3f, 0.9f, 5.0f);
 
         glfwSwapBuffers(window);
     }
 
+    pirateMesh.cleanup();
+    bottleMesh.cleanup();
+    cannonMesh.cleanup();
     glDeleteVertexArrays(1, &gDotVAO);
     glDeleteBuffers(1, &gDotVBO);
     glDeleteProgram(gShader);
