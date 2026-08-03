@@ -70,15 +70,13 @@ set(SOURCES
     src/particlecontact.cpp
     src/contactresolver.cpp
     src/particlelink.cpp
-    src/cable.cpp
     src/rod.cpp
+    src/cable.cpp
 
     # Forces & Springs
     src/force/gravity_force_gen.cpp
-    src/force/drag_force_gen.cpp
+    #src/force/drag_force_gen.cpp
     src/force/force_registry.cpp
-    src/spring/particlespring.cpp
-    src/spring/anchoredspring.cpp
 
     # Engine Headers (for Visual Studio / IDE project tree)
     src/headers/main.h
@@ -89,10 +87,11 @@ set(SOURCES
     src/headers/particlecontact.h
     src/headers/contactresolver.h
     src/headers/cable.h
+    
     src/headers/force_gen.h
     src/headers/drag_force_gen.h
     src/headers/force_registry.h
-    src/headers/anchoredspring.h
+    
 
     # Pirate Logic Headers (Header-Only)
     src/headers/pirate/constants.h
@@ -104,7 +103,7 @@ set(SOURCES
     src/headers/pirate/pirate.h
 )
 
-add_executable(melonyx ${SOURCES} "src/headers/pirate/bottle_placer.h" "src/bottle_placer.cpp")
+add_executable(melonyx ${SOURCES} "src/headers/pirate/bottle_placer.h" "src/bottle_placer.cpp" "src/drag_force_gen.cpp" "src/headers/wind_force_gen.h" "src/wind_force_gen.cpp")
 
 # Allows `#include "headers/..."` and `#include "headers/pirate/..."`
 target_include_directories(melonyx PRIVATE

@@ -1,15 +1,23 @@
-#pragma once
+#ifndef DRAG_FORCE_GEN_H
+#define DRAG_FORCE_GEN_H
+
 #include "force_gen.h"
+#include "particle.h"
+#include <glm/glm.hpp>
 
-class DragForceGenerator : public ForceGenerator
-{
-private:
-	float k1 = 0.74;
-	float k2 = 0.57;
+namespace melonyx {
 
-public:
-	DragForceGenerator() {}
-	DragForceGenerator(float _k1, float _k2) : k1(_k1), k2(_k2) {}
+    class DragForceGenerator : public ForceGenerator {
+    private:
+        float k1;
+        float k2;
 
-	void UpdateForce(melonyx::Particle* particle, float time) override;
-};
+    public:
+        DragForceGenerator(float k1_val, float k2_val) : k1(k1_val), k2(k2_val) {}
+
+        virtual void UpdateForce(Particle* particle, float duration) override;
+    };
+
+} // namespace melonyx
+
+#endif

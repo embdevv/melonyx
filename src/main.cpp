@@ -1,6 +1,6 @@
 /**
  * @file main.cpp
- * @author Erica Mauriz Barundia & Danie Bravo
+ * @author Erica Barundia & Danie Bravo
  *
  * ARR You Drunk Yet? (3D Physics Visualizer with ObjMesh)
  */
@@ -30,6 +30,7 @@
 #include "force_registry.h"
 #include "gravity_force_gen.h"
 #include "drag_force_gen.h"
+#include "wind_force_gen.h"
 #include "rod.h"
 
 #include "OpenGLObject.h"
@@ -94,8 +95,9 @@ LevelConfig gLevel = getLevelConfig(1);
 
 melonyx::PhysicsWorld pWorld;
 pirategame::Pirate    pirate;
-GravityForceGenerator gravityGen(glm::vec3(0.0f, -GRAVITY, 0.0f));
-DragForceGenerator    dragGen(DRAG_K1, DRAG_K2);
+GravityForceGenerator          gravityGen(glm::vec3(0.0f, -GRAVITY, 0.0f));
+melonyx::DragForceGenerator    dragGen(DRAG_K1, DRAG_K2);
+melonyx::WindForceGenerator    windGen(glm::vec3(0.0f, 0.0f, 0.0f));
 
 pirategame::Cannon          gCannon(-300.0f, 20.0f);
 vector<pirategame::Bottle>  gBottles;
@@ -195,11 +197,12 @@ vector<glm::vec2> simulateArc(float angleDeg, float power, float waterLine) {
 
     for (int i = 0; i < 500; i++) {
         vel.y -= GRAVITY * PREVIEW_DT;
-        vel *= (1.0f - DRAG_K1 * PREVIEW_DT);
+        vel.x += gLevel.windStrength * PREVIEW_DT;   // matches WindForceGenerator
         pos += vel * PREVIEW_DT;
         pts.push_back(pos);
         if (pos.y < waterLine) break;
     }
+
     return pts;
 }
 
@@ -541,7 +544,9 @@ void launchPirate() {
 
     pWorld.AddParticle(&pirate);
     pWorld.forceRegistry.Add(&pirate, &gravityGen);
-    pWorld.forceRegistry.Add(&pirate, &dragGen);
+
+    windGen.SetForce(glm::vec3(gLevel.windStrength, 0.0f, 0.0f));
+    pWorld.forceRegistry.Add(&pirate, &windGen);
 
     pWorld.Particles.push_back(&gMastAnchor);
     pWorld.AddParticle(&gCrate);
@@ -769,7 +774,7 @@ int main() {
             curr_ns -= timestep;
 
             if (gState == GameState::LAUNCHED) {
-                pWorld.Update(timestep_sec);
+                pWorld.Update(timestep_sec); // velocity handled in particlecontact.cpp
                 pirate.updateRotation(timestep_sec);
                 gFlightElapsed += timestep_sec;
 
@@ -788,12 +793,14 @@ int main() {
                     pirate.onCollisionHit(glm::length(pirate.Velocity));
                 }
 
+                // Win
                 int currentHitCount = pirategame::bottlesCollected(gBottles);
                 if (currentHitCount >= gLevel.bottleQuota) {
                     onFlightEnd(false);
                     break;
                 }
 
+                // Lose/Fail Condition
                 bool outOfBounds = pirate.Position.x > ORTHO_SIZE + 50.0f
                     || pirate.Position.x < -ORTHO_SIZE - 50.0f;
 
@@ -945,7 +952,7 @@ int main() {
         }
 
         // 6. HUD Overlay
-        drawTimerBar();
+        //drawTimerBar();
         if (gState == GameState::WIN) {
             drawWinScreen(gAppTime);
         }
