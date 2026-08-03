@@ -108,6 +108,13 @@ melonyx::Particle gMastAnchor;
 melonyx::Particle gCrate;
 melonyx::Rod      gCrateRod{};
 
+void showControls()
+{
+    printf("\nCONTROLS:\n");
+    printf("Left/Right arrow: Increase/decrease launch power");
+    printf("\nWASD: Move camera\nSpacebar: Fire cannon\nR: Restart current level\nL: Skip level (debug)\n");
+}
+
 void setLevelObstacleAnchor(int level) {
     switch (level) {
     case 1:  gBaseAnchorPos = glm::vec3(-220.0f, 250.0f, 0.0f); break;
@@ -776,6 +783,8 @@ int main() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    showControls();
+
     startLevel(1);
 
     using clock = chrono::high_resolution_clock;
@@ -983,7 +992,7 @@ int main() {
         // 6. HUD Overlay
 
         drawBottleQuota();
-        drawTimerBar();
+        //drawTimerBar();
 
         if (gState == GameState::WIN)
         {
