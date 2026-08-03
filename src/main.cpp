@@ -453,11 +453,11 @@ void loadLevelBottles(int level) {
 
     case 5:
         gLevel.bottleQuota = 4;
-        BottlePlacer::placeBottle(-180.0f, 180.0f, 0.0f, gBottles);
-        BottlePlacer::placeBottle(-60.0f, 270.0f, 0.0f, gBottles);
+        BottlePlacer::placeBottle(-180.0f, 120.0f, 0.0f, gBottles);
+        BottlePlacer::placeBottle(-60.0f, 100.0f, 0.0f, gBottles);
         gPowerUps.push_back({ glm::vec3(60.0f, 60.0f, 0.0f), 22.0f, PowerUpType::BOUNCER });
         BottlePlacer::placeBottle(180.0f, 250.0f, 0.0f, gBottles);
-        BottlePlacer::placeBottle(280.0f, 160.0f, 0.0f, gBottles);
+        BottlePlacer::placeBottle(280.0f, 350.0f, 0.0f, gBottles);
         break;
 
     case 6:
@@ -472,13 +472,13 @@ void loadLevelBottles(int level) {
         break;
 
     case 7:
-        gLevel.bottleQuota = 5;
+        gLevel.bottleQuota = 4;
         BottlePlacer::placeBottle(-190.0f, 150.0f, 0.0f, gBottles);
         BottlePlacer::placeBottle(-90.0f, 230.0f, 0.0f, gBottles);
         gPowerUps.push_back({ glm::vec3(10.0f, 60.0f, 0.0f), 24.0f, PowerUpType::BOUNCER });
-        BottlePlacer::placeBottle(120.0f, 240.0f, 0.0f, gBottles);
-        BottlePlacer::placeBottle(220.0f, 220.0f, 0.0f, gBottles);
-        BottlePlacer::placeBottle(310.0f, 160.0f, 0.0f, gBottles);
+        BottlePlacer::placeBottle(120.0f, 420.0f, 0.0f, gBottles);
+        BottlePlacer::placeBottle(220.0f, 450.0f, 0.0f, gBottles);
+        BottlePlacer::placeBottle(360.0f, 380.0f, 0.0f, gBottles);
         break;
 
     case 8:
@@ -493,7 +493,7 @@ void loadLevelBottles(int level) {
         break;
 
     case 9:
-        gLevel.bottleQuota = 6;
+        gLevel.bottleQuota = 4;
         BottlePlacer::placeBottle(-180.0f, 150.0f, 0.0f, gBottles);
         gPowerUps.push_back({ glm::vec3(-70.0f, 50.0f, 0.0f), 22.0f, PowerUpType::BOUNCER });
         BottlePlacer::placeBottle(30.0f, 220.0f, 0.0f, gBottles);
@@ -505,16 +505,16 @@ void loadLevelBottles(int level) {
         break;
 
     case 10:
-        gLevel.bottleQuota = 7;
+        gLevel.bottleQuota = 3;
         BottlePlacer::placeBottle(-200.0f, 150.0f, 0.0f, gBottles);
         gPowerUps.push_back({ glm::vec3(-100.0f, 50.0f, 0.0f), 22.0f, PowerUpType::BOUNCER });
         BottlePlacer::placeBottle(0.0f, 240.0f, 0.0f, gBottles);
         gPowerUps.push_back({ glm::vec3(100.0f, 250.0f, 0.0f), 20.0f, PowerUpType::BOOST_RING });
         BottlePlacer::placeBottle(190.0f, 220.0f, 0.0f, gBottles);
-        gPowerUps.push_back({ glm::vec3(280.0f, 60.0f, 0.0f), 22.0f, PowerUpType::BOUNCER });
+        gPowerUps.push_back({ glm::vec3(300.0f, 60.0f, 0.0f), 22.0f, PowerUpType::BOUNCER });
         BottlePlacer::placeBottle(360.0f, 200.0f, 0.0f, gBottles);
         BottlePlacer::placeBottle(430.0f, 150.0f, 0.0f, gBottles);
-        BottlePlacer::placeBottle(490.0f, 100.0f, 0.0f, gBottles);
+        BottlePlacer::placeBottle(490.0f, 300.0f, 0.0f, gBottles);
         break;
     }
 }
@@ -721,6 +721,33 @@ void drawWinScreen(float elapsedSeconds) {
     glEnable(GL_DEPTH_TEST);
 }
 
+void drawBottleQuota()
+{
+    constexpr float size = 20.0f;
+    constexpr float spacing = 8.0f;
+
+    float x = 20.0f;
+    float y = WINDOW_HEIGHT - 40.0f;
+
+    int collected = pirategame::bottlesCollected(gBottles);
+
+    for (int i = 0; i < gLevel.bottleQuota; i++)
+    {
+        glm::vec4 color =
+            (i < collected)
+            ? glm::vec4(0.15f, 0.9f, 0.2f, 1.0f)   // collected
+            : glm::vec4(0.35f, 0.35f, 0.35f, 1.0f); // remaining
+
+        drawUIRect(
+            x + i * (size + spacing),
+            y,
+            size,
+            size,
+            color
+        );
+    }
+}
+
 int main() {
     constexpr chrono::nanoseconds timestep(16ms);
     constexpr float timestep_sec = timestep.count() / (float)(1E09);
@@ -831,6 +858,8 @@ int main() {
 
         glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 3000.0f);
         glm::mat4 view = glm::lookAt(cameraPos, cameraTarget, cameraUp);
+
+    
 
         // 1. Water Plane
         {
@@ -952,8 +981,12 @@ int main() {
         }
 
         // 6. HUD Overlay
-        //drawTimerBar();
-        if (gState == GameState::WIN) {
+
+        drawBottleQuota();
+        drawTimerBar();
+
+        if (gState == GameState::WIN)
+        {
             drawWinScreen(gAppTime);
         }
 
